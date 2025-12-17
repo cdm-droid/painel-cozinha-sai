@@ -10,6 +10,7 @@ export interface Insumo {
   custoUnitario: number;
   status: 'Normal' | 'Baixo' | 'Crítico';
   ultimaConferencia: string;
+  ativo: boolean;
 }
 
 export interface FichaTecnica {
@@ -32,25 +33,25 @@ export interface Componente {
 }
 
 export const insumos: Insumo[] = [
-  { id: "4196969", nome: "(IN) Açucar demerara", unidade: "Kg", categoria: "Açúcar e Derivados", estoqueAtual: 2, estoqueMinimo: 5, custoUnitario: 4.50, status: "Crítico", ultimaConferencia: "14/12/2025" },
-  { id: "4196997", nome: "(IN) Alface americano", unidade: "Un", categoria: "Hortifrutti", estoqueAtual: 3, estoqueMinimo: 10, custoUnitario: 2.50, status: "Baixo", ultimaConferencia: "14/12/2025" },
-  { id: "4341481", nome: "(IN) BACON FATIADO", unidade: "Kg", categoria: "Carnes", estoqueAtual: 15, estoqueMinimo: 5, custoUnitario: 35.90, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "4341475", nome: "(IN) BACON MANTA", unidade: "Kg", categoria: "Carnes", estoqueAtual: 1.3, estoqueMinimo: 2, custoUnitario: 28.90, status: "Baixo", ultimaConferencia: "14/12/2025" },
-  { id: "4213716", nome: "(IN) Cebola Roxa", unidade: "Kg", categoria: "Hortifrutti", estoqueAtual: 8, estoqueMinimo: 3, custoUnitario: 6.50, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "4213723", nome: "(IN) Manteiga", unidade: "Un", categoria: "Laticínios e Frios", estoqueAtual: 5, estoqueMinimo: 10, custoUnitario: 26.29, status: "Baixo", ultimaConferencia: "14/12/2025" },
-  { id: "4197252", nome: "(IN) Queijo prato", unidade: "Kg", categoria: "Laticínios e Frios", estoqueAtual: 12, estoqueMinimo: 5, custoUnitario: 45.00, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "4339810", nome: "(IN) Tomate", unidade: "Kg", categoria: "Hortifrutti", estoqueAtual: 350, estoqueMinimo: 50, custoUnitario: 5.90, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "4803940", nome: "(IN) ACHOCOLATADO", unidade: "Kg", categoria: "Confeitaria", estoqueAtual: 600, estoqueMinimo: 100, custoUnitario: 30.90, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "4218390", nome: "(IN) Açúcar cristal", unidade: "Kg", categoria: "Açúcar e Derivados", estoqueAtual: 1, estoqueMinimo: 5, custoUnitario: 3.39, status: "Crítico", ultimaConferencia: "14/12/2025" },
-  { id: "4196993", nome: "Água com gás", unidade: "Un", categoria: "Bebidas", estoqueAtual: 32, estoqueMinimo: 24, custoUnitario: 1.50, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1001", nome: "(IN) Creme de Leite", unidade: "L", categoria: "Laticínios e Frios", estoqueAtual: 12, estoqueMinimo: 5, custoUnitario: 3.69, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1002", nome: "(IN) Cupuaçu - polpa", unidade: "Kg", categoria: "Hortifrutti", estoqueAtual: 5, estoqueMinimo: 2, custoUnitario: 22.09, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1003", nome: "(IN) Farinha de trigo", unidade: "Kg", categoria: "Mercearia", estoqueAtual: 10, estoqueMinimo: 5, custoUnitario: 6.19, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1004", nome: "(IN) Leite condensado", unidade: "Un", categoria: "Laticínios e Frios", estoqueAtual: 24, estoqueMinimo: 12, custoUnitario: 7.59, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1005", nome: "(IN) Ovo", unidade: "Un", categoria: "Hortifrutti", estoqueAtual: 60, estoqueMinimo: 30, custoUnitario: 0.83, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1006", nome: "(IN) Cachaça", unidade: "L", categoria: "Bebidas", estoqueAtual: 2, estoqueMinimo: 1, custoUnitario: 65.00, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1007", nome: "(IN) Chocolate meio amargo", unidade: "Kg", categoria: "Confeitaria", estoqueAtual: 3, estoqueMinimo: 1, custoUnitario: 45.00, status: "Normal", ultimaConferencia: "14/12/2025" },
-  { id: "1008", nome: "(IN) Leite Líquido", unidade: "L", categoria: "Laticínios e Frios", estoqueAtual: 12, estoqueMinimo: 6, custoUnitario: 7.59, status: "Normal", ultimaConferencia: "14/12/2025" },
+  { id: "4196969", nome: "(IN) Açucar demerara", unidade: "Kg", categoria: "Açúcar e Derivados", estoqueAtual: 2, estoqueMinimo: 5, custoUnitario: 4.50, status: "Crítico", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4196997", nome: "(IN) Alface americano", unidade: "Un", categoria: "Hortifrutti", estoqueAtual: 3, estoqueMinimo: 10, custoUnitario: 2.50, status: "Baixo", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4341481", nome: "(IN) BACON FATIADO", unidade: "Kg", categoria: "Carnes", estoqueAtual: 15, estoqueMinimo: 5, custoUnitario: 35.90, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4341475", nome: "(IN) BACON MANTA", unidade: "Kg", categoria: "Carnes", estoqueAtual: 1.3, estoqueMinimo: 2, custoUnitario: 28.90, status: "Baixo", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4213716", nome: "(IN) Cebola Roxa", unidade: "Kg", categoria: "Hortifrutti", estoqueAtual: 8, estoqueMinimo: 3, custoUnitario: 6.50, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4213723", nome: "(IN) Manteiga", unidade: "Un", categoria: "Laticínios e Frios", estoqueAtual: 5, estoqueMinimo: 10, custoUnitario: 26.29, status: "Baixo", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4197252", nome: "(IN) Queijo prato", unidade: "Kg", categoria: "Laticínios e Frios", estoqueAtual: 12, estoqueMinimo: 5, custoUnitario: 45.00, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4339810", nome: "(IN) Tomate", unidade: "Kg", categoria: "Hortifrutti", estoqueAtual: 350, estoqueMinimo: 50, custoUnitario: 5.90, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4803940", nome: "(IN) ACHOCOLATADO", unidade: "Kg", categoria: "Confeitaria", estoqueAtual: 600, estoqueMinimo: 100, custoUnitario: 30.90, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4218390", nome: "(IN) Açúcar cristal", unidade: "Kg", categoria: "Açúcar e Derivados", estoqueAtual: 1, estoqueMinimo: 5, custoUnitario: 3.39, status: "Crítico", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "4196993", nome: "Água com gás", unidade: "Un", categoria: "Bebidas", estoqueAtual: 32, estoqueMinimo: 24, custoUnitario: 1.50, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1001", nome: "(IN) Creme de Leite", unidade: "L", categoria: "Laticínios e Frios", estoqueAtual: 12, estoqueMinimo: 5, custoUnitario: 3.69, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1002", nome: "(IN) Cupuaçu - polpa", unidade: "Kg", categoria: "Hortifrutti", estoqueAtual: 5, estoqueMinimo: 2, custoUnitario: 22.09, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1003", nome: "(IN) Farinha de trigo", unidade: "Kg", categoria: "Mercearia", estoqueAtual: 10, estoqueMinimo: 5, custoUnitario: 6.19, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1004", nome: "(IN) Leite condensado", unidade: "Un", categoria: "Laticínios e Frios", estoqueAtual: 24, estoqueMinimo: 12, custoUnitario: 7.59, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1005", nome: "(IN) Ovo", unidade: "Un", categoria: "Hortifrutti", estoqueAtual: 60, estoqueMinimo: 30, custoUnitario: 0.83, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1006", nome: "(IN) Cachaça", unidade: "L", categoria: "Bebidas", estoqueAtual: 2, estoqueMinimo: 1, custoUnitario: 65.00, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1007", nome: "(IN) Chocolate meio amargo", unidade: "Kg", categoria: "Confeitaria", estoqueAtual: 3, estoqueMinimo: 1, custoUnitario: 45.00, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
+  { id: "1008", nome: "(IN) Leite Líquido", unidade: "L", categoria: "Laticínios e Frios", estoqueAtual: 12, estoqueMinimo: 6, custoUnitario: 7.59, status: "Normal", ultimaConferencia: "14/12/2025", ativo: true },
 ];
 
 export const fichasTecnicas: FichaTecnica[] = [

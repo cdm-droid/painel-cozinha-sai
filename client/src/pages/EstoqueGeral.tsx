@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { 
   Search, 
   Filter, 
@@ -18,15 +19,19 @@ import {
   Package,
   Plus,
   MoreHorizontal,
-  Save
+  Save,
+  AlertTriangle,
+  ListFilter
 } from "lucide-react";
-import { insumos } from "@/lib/mock-data";
+import { insumos as initialInsumos } from "@/lib/mock-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export default function EstoqueGeral() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [contagemFilter, setContagemFilter] = useState<'todos' | 'critico' | 'geral'>('todos');
+  const [localInsumos, setLocalInsumos] = useState(initialInsumos);
   const { isOperacional } = useAuth();
   
   // Estado para armazenar contagens temporárias (apenas visual)
@@ -40,16 +45,41 @@ export default function EstoqueGeral() {
     toast.success("Contagem de estoque salva com sucesso!");
     setContagens({});
   };
+
+  const toggleItemAtivo = (id: string) => {
+    setLocalInsumos(prev => prev.map(item => 
+      item.id === id ? { ...item, ativo: !item.ativo } : item
+    ));
+    toast.success("Status do item atualizado.");
+  };
   
   // Obter categorias únicas
-  const categories = Array.from(new Set(insumos.map(item => item.categoria)));
+  const categories = Array.from(new Set(localInsumos.map(item => item.categoria)));
 
   // Filtrar itens
-  const filteredItems = insumos.filter(item => {
+  const filteredItems = localInsumos.filter(item => {
+    // Filtro de busca
     const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           item.id.includes(searchTerm);
+    
+    // Filtro de categoria
     const matchesCategory = categoryFilter ? item.categoria === categoryFilter : true;
-    return matchesSearch && matchesCategory;
+    
+    // Filtro de tipo de contagem (apenas para operacional)
+    let matchesContagem = true;
+    if (isOperacional) {
+      // Operacional só vê itens ativos
+      if (!item.ativo) return false;
+
+      if (contagemFilter === 'critico') {
+        matchesContagem = item.status === 'Crítico' || item.status === 'Baixo';
+      } else if (contagemFilter === 'geral') {
+        // Geral inclui tudo que está ativo
+        matchesContagem = true;
+      }
+    }
+
+    return matchesSearch && matchesCategory && matchesContagem;
   });
 
   return (
@@ -90,30 +120,67 @@ export default function EstoqueGeral() {
         {/* Filtros Laterais */}
         <Card className="industrial-card h-fit md:col-span-1">
           <CardHeader>
-            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Categorias</CardTitle>
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Filtros</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Button 
-              variant={categoryFilter === null ? "secondary" : "ghost"} 
-              className="w-full justify-start font-normal"
-              onClick={() => setCategoryFilter(null)}
-            >
-              Todos os itens
-              <span className="ml-auto text-xs text-muted-foreground">{insumos.length}</span>
-            </Button>
-            {categories.map(cat => (
-              <Button 
-                key={cat}
-                variant={categoryFilter === cat ? "secondary" : "ghost"} 
-                className="w-full justify-start font-normal"
-                onClick={() => setCategoryFilter(cat)}
-              >
-                {cat}
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {insumos.filter(i => i.categoria === cat).length}
-                </span>
-              </Button>
-            ))}
+          <CardContent className="space-y-6">
+            {isOperacional && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase">Tipo de Contagem</label>
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    variant={contagemFilter === 'todos' ? "secondary" : "ghost"} 
+                    className="justify-start"
+                    onClick={() => setContagemFilter('todos')}
+                  >
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Todos os Itens
+                  </Button>
+                  <Button 
+                    variant={contagemFilter === 'critico' ? "secondary" : "ghost"} 
+                    className="justify-start text-destructive hover:text-destructive"
+                    onClick={() => setContagemFilter('critico')}
+                  >
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    Estoque Crítico
+                  </Button>
+                  <Button 
+                    variant={contagemFilter === 'geral' ? "secondary" : "ghost"} 
+                    className="justify-start"
+                    onClick={() => setContagemFilter('geral')}
+                  >
+                    <Package className="mr-2 h-4 w-4" />
+                    Estoque Geral
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase">Categorias</label>
+              <div className="flex flex-col gap-1">
+                <Button 
+                  variant={categoryFilter === null ? "secondary" : "ghost"} 
+                  className="w-full justify-start font-normal"
+                  onClick={() => setCategoryFilter(null)}
+                >
+                  Todas as categorias
+                  <span className="ml-auto text-xs text-muted-foreground">{localInsumos.length}</span>
+                </Button>
+                {categories.map(cat => (
+                  <Button 
+                    key={cat}
+                    variant={categoryFilter === cat ? "secondary" : "ghost"} 
+                    className="w-full justify-start font-normal"
+                    onClick={() => setCategoryFilter(cat)}
+                  >
+                    {cat}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {localInsumos.filter(i => i.categoria === cat).length}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -158,6 +225,7 @@ export default function EstoqueGeral() {
                         <TableHead className="text-right font-bold">Unid.</TableHead>
                         <TableHead className="text-right font-bold">Custo Unit.</TableHead>
                         <TableHead className="text-center font-bold">Status</TableHead>
+                        <TableHead className="text-center font-bold">Ativo p/ Contagem</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </>
                     )}
@@ -170,7 +238,12 @@ export default function EstoqueGeral() {
                         {!isOperacional && (
                           <TableCell className="font-mono text-xs text-muted-foreground">{item.id}</TableCell>
                         )}
-                        <TableCell className="font-medium">{item.nome}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.nome}
+                          {item.status === 'Crítico' && isOperacional && (
+                            <Badge variant="destructive" className="ml-2 text-[10px] h-5 px-1">Crítico</Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm">{item.categoria}</TableCell>
                         
                         {isOperacional ? (
@@ -211,6 +284,12 @@ export default function EstoqueGeral() {
                                 {item.status}
                               </Badge>
                             </TableCell>
+                            <TableCell className="text-center">
+                              <Switch 
+                                checked={item.ativo}
+                                onCheckedChange={() => toggleItemAtivo(item.id)}
+                              />
+                            </TableCell>
                             <TableCell>
                               <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <MoreHorizontal className="h-4 w-4" />
@@ -222,7 +301,7 @@ export default function EstoqueGeral() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={isOperacional ? 4 : 8} className="h-32 text-center text-muted-foreground">
+                      <TableCell colSpan={isOperacional ? 4 : 9} className="h-32 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Package className="h-8 w-8 opacity-20" />
                           <p>Nenhum insumo encontrado com os filtros atuais.</p>
