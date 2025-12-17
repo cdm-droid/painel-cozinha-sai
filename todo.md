@@ -29,3 +29,10 @@
 - [ ] Adicionar funcionalidade de backup/exportação
 - [ ] Integração completa com Saipos PDV
 - [ ] Relatórios de custos e CMV
+
+## Concluído Recentemente
+- [x] Dashboard com dados reais do banco de dados
+  - [x] API para estatísticas de estoque crítico
+  - [x] API para total de produções do dia
+  - [x] API para custos e alertas
+  - [x] Atualizar componente Home.tsx

@@ -1,4 +1,4 @@
-import { eq, like, and, or, desc, asc, sql } from "drizzle-orm";
+import { eq, like, and, or, desc, asc, sql, gte } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "./db";
 import { 
@@ -471,4 +471,103 @@ export const contagensRouter = router({
 
       return await query.orderBy(desc(contagensEstoque.createdAt));
     }),
+});
+
+// ============== DASHBOARD ==============
+
+export const dashboardRouter = router({
+  // Obter estatísticas gerais do dashboard
+  stats: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return {
+      totalInsumos: 0,
+      insumosAtivos: 0,
+      insumosCriticos: 0,
+      insumosBaixos: 0,
+      totalFichas: 0,
+      producoesHoje: 0,
+      perdasHoje: 0,
+      custoPerdasHoje: 0,
+    };
+
+    // Total de insumos
+    const [totalInsumosResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(insumos);
+    const totalInsumos = totalInsumosResult?.count || 0;
+
+    // Insumos ativos
+    const [insumosAtivosResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(insumos).where(eq(insumos.ativo, true));
+    const insumosAtivos = insumosAtivosResult?.count || 0;
+
+    // Insumos críticos
+    const [insumosCriticosResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(insumos).where(eq(insumos.status, 'Crítico'));
+    const insumosCriticos = insumosCriticosResult?.count || 0;
+
+    // Insumos baixos
+    const [insumosBaixosResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(insumos).where(eq(insumos.status, 'Baixo'));
+    const insumosBaixos = insumosBaixosResult?.count || 0;
+
+    // Total de fichas técnicas
+    const [totalFichasResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(fichasTecnicas);
+    const totalFichas = totalFichasResult?.count || 0;
+
+    // Produções de hoje
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [producoesHojeResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(diarioProducao).where(gte(diarioProducao.createdAt, today));
+    const producoesHoje = producoesHojeResult?.count || 0;
+
+    // Perdas de hoje
+    const [perdasHojeResult] = await db.select({ 
+      count: sql<number>`COUNT(*)`,
+      total: sql<number>`COALESCE(SUM(custoPerda), 0)`
+    }).from(perdas).where(gte(perdas.createdAt, today));
+    const perdasHoje = perdasHojeResult?.count || 0;
+    const custoPerdasHoje = perdasHojeResult?.total || 0;
+
+    return {
+      totalInsumos,
+      insumosAtivos,
+      insumosCriticos,
+      insumosBaixos,
+      totalFichas,
+      producoesHoje,
+      perdasHoje,
+      custoPerdasHoje,
+    };
+  }),
+
+  // Obter alertas de estoque crítico
+  alertas: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    const alertas = await db.select({
+      id: insumos.id,
+      nome: insumos.nome,
+      estoqueAtual: insumos.estoqueAtual,
+      estoqueMinimo: insumos.estoqueMinimo,
+      unidade: insumos.unidade,
+      status: insumos.status,
+      updatedAt: insumos.updatedAt,
+    })
+    .from(insumos)
+    .where(or(eq(insumos.status, 'Crítico'), eq(insumos.status, 'Baixo')))
+    .orderBy(asc(insumos.status), asc(insumos.nome))
+    .limit(10);
+
+    return alertas;
+  }),
+
+  // Obter produções recentes
+  producoesRecentes: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    const producoes = await db.select()
+      .from(diarioProducao)
+      .orderBy(desc(diarioProducao.createdAt))
+      .limit(5);
+
+    return producoes;
+  }),
 });
