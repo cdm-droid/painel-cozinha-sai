@@ -124,7 +124,7 @@ export const diarioProducao = mysqlTable("diario_producao", {
   quantidadeProduzida: decimal("quantidadeProduzida", { precision: 10, scale: 2 }).notNull(),
   unidade: varchar("unidade", { length: 50 }).default("un"),
   responsavel: varchar("responsavel", { length: 100 }),
-  status: mysqlEnum("statusProducao", ["Planejado", "Em Produção", "Concluído"]).default("Planejado").notNull(),
+  statusProducao: mysqlEnum("statusProducao", ["Planejado", "Em Produção", "Concluído"]).default("Planejado").notNull(),
   custoTotal: decimal("custoTotal", { precision: 10, scale: 2 }),
   observacao: text("observacao"),
   userId: int("userId"),
