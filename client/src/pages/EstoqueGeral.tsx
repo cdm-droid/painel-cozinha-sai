@@ -17,13 +17,29 @@ import {
   Download, 
   Package,
   Plus,
-  MoreHorizontal
+  MoreHorizontal,
+  Save
 } from "lucide-react";
 import { insumos } from "@/lib/mock-data";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function EstoqueGeral() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const { isOperacional } = useAuth();
+  
+  // Estado para armazenar contagens temporárias (apenas visual)
+  const [contagens, setContagens] = useState<Record<string, string>>({});
+
+  const handleContagemChange = (id: string, value: string) => {
+    setContagens(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSalvarContagem = () => {
+    toast.success("Contagem de estoque salva com sucesso!");
+    setContagens({});
+  };
   
   // Obter categorias únicas
   const categories = Array.from(new Set(insumos.map(item => item.categoria)));
@@ -40,18 +56,33 @@ export default function EstoqueGeral() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground font-display">Estoque Geral</h1>
-          <p className="text-muted-foreground mt-1">Gerenciamento completo de todos os insumos cadastrados.</p>
+          <h1 className="text-3xl font-bold text-foreground font-display">
+            {isOperacional ? "Contagem de Estoque" : "Estoque Geral"}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isOperacional 
+              ? "Insira a quantidade física atual de cada item." 
+              : "Gerenciamento completo de todos os insumos cadastrados."}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Plus size={16} />
-            Novo Insumo
-          </Button>
-          <Button variant="outline" className="gap-2">
-            <Download size={16} />
-            Exportar
-          </Button>
+          {!isOperacional && (
+            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus size={16} />
+              Novo Insumo
+            </Button>
+          )}
+          {isOperacional ? (
+            <Button className="gap-2" onClick={handleSalvarContagem}>
+              <Save size={16} />
+              Salvar Contagem
+            </Button>
+          ) : (
+            <Button variant="outline" className="gap-2">
+              <Download size={16} />
+              Exportar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -110,54 +141,88 @@ export default function EstoqueGeral() {
               <Table>
                 <TableHeader className="bg-secondary/50">
                   <TableRow>
-                    <TableHead className="w-[80px] font-bold">ID</TableHead>
+                    {!isOperacional && <TableHead className="w-[80px] font-bold">ID</TableHead>}
                     <TableHead className="font-bold">Produto</TableHead>
                     <TableHead className="font-bold">Categoria</TableHead>
-                    <TableHead className="text-right font-bold">Estoque</TableHead>
-                    <TableHead className="text-right font-bold">Unid.</TableHead>
-                    <TableHead className="text-right font-bold">Custo Unit.</TableHead>
-                    <TableHead className="text-center font-bold">Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    
+                    {isOperacional ? (
+                      // Cabeçalho Operacional
+                      <>
+                        <TableHead className="text-right font-bold w-[150px]">Contagem Atual</TableHead>
+                        <TableHead className="text-left font-bold w-[80px]">Unid.</TableHead>
+                      </>
+                    ) : (
+                      // Cabeçalho Gerencial
+                      <>
+                        <TableHead className="text-right font-bold">Estoque</TableHead>
+                        <TableHead className="text-right font-bold">Unid.</TableHead>
+                        <TableHead className="text-right font-bold">Custo Unit.</TableHead>
+                        <TableHead className="text-center font-bold">Status</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredItems.length > 0 ? (
                     filteredItems.map((item) => (
                       <TableRow key={item.id} className="hover:bg-secondary/30 transition-colors group">
-                        <TableCell className="font-mono text-xs text-muted-foreground">{item.id}</TableCell>
+                        {!isOperacional && (
+                          <TableCell className="font-mono text-xs text-muted-foreground">{item.id}</TableCell>
+                        )}
                         <TableCell className="font-medium">{item.nome}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{item.categoria}</TableCell>
-                        <TableCell className="text-right font-mono font-bold">
-                          {item.estoqueAtual}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground text-sm">{item.unidade}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          R$ {item.custoUnitario.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge 
-                            variant="outline" 
-                            className={`
-                              ${item.status === 'Crítico' 
-                                ? 'bg-destructive/10 text-destructive border-destructive/20' 
-                                : item.status === 'Baixo'
-                                  ? 'bg-warning/10 text-warning-foreground border-warning/20'
-                                  : 'bg-success/10 text-success-foreground border-success/20'}
-                            `}
-                          >
-                            {item.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                        
+                        {isOperacional ? (
+                          // Linha Operacional
+                          <>
+                            <TableCell className="text-right">
+                              <Input 
+                                type="number" 
+                                className="h-8 w-24 ml-auto text-right font-mono"
+                                placeholder="0"
+                                value={contagens[item.id] || ""}
+                                onChange={(e) => handleContagemChange(item.id, e.target.value)}
+                              />
+                            </TableCell>
+                            <TableCell className="text-left text-muted-foreground text-sm">{item.unidade}</TableCell>
+                          </>
+                        ) : (
+                          // Linha Gerencial
+                          <>
+                            <TableCell className="text-right font-mono font-bold">
+                              {item.estoqueAtual}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground text-sm">{item.unidade}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">
+                              R$ {item.custoUnitario.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge 
+                                variant="outline" 
+                                className={`
+                                  ${item.status === 'Crítico' 
+                                    ? 'bg-destructive/10 text-destructive border-destructive/20' 
+                                    : item.status === 'Baixo'
+                                      ? 'bg-warning/10 text-warning-foreground border-warning/20'
+                                      : 'bg-success/10 text-success-foreground border-success/20'}
+                                `}
+                              >
+                                {item.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </>
+                        )}
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                      <TableCell colSpan={isOperacional ? 4 : 8} className="h-32 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Package className="h-8 w-8 opacity-20" />
                           <p>Nenhum insumo encontrado com os filtros atuais.</p>

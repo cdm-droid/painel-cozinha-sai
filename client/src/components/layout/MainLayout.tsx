@@ -9,10 +9,14 @@ import {
   X, 
   Search,
   Bell,
-  Settings
+  Settings,
+  AlertTriangle,
+  AlertOctagon,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -21,14 +25,23 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout, user, isOperacional } = useAuth();
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { label: "Estoque Crítico", icon: ClipboardList, href: "/estoque-critico" },
+    { label: "Estoque Crítico", icon: AlertTriangle, href: "/estoque-critico" },
     { label: "Estoque Geral", icon: Package, href: "/estoque-geral" },
     { label: "Fichas Técnicas", icon: ChefHat, href: "/fichas-tecnicas" },
-    { label: "Diário de Produção", icon: Menu, href: "/diario-producao" },
+    { label: "Diário de Produção", icon: ClipboardList, href: "/diario-producao" },
+    { label: "Registro de Perdas", icon: AlertOctagon, href: "/perdas" },
   ];
+
+  // Filtra itens para nível operacional
+  const filteredNavItems = isOperacional 
+    ? navItems.filter(item => 
+        ["/estoque-critico", "/fichas-tecnicas", "/diario-producao", "/perdas"].includes(item.href)
+      )
+    : navItems;
 
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">
@@ -68,7 +81,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Menu Principal
             </p>
             <nav className="space-y-1">
-              {navItems.map((item) => {
+              {filteredNavItems.map((item) => {
                 const isActive = location === item.href;
                 return (
                   <Link 
@@ -94,25 +107,34 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Sistema
             </p>
             <nav className="space-y-1">
-              <Link 
-                href="/configuracoes"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+              {!isOperacional && (
+                <Link 
+                  href="/configuracoes"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                >
+                  <Settings size={18} />
+                  Configurações
+                </Link>
+              )}
+              <button 
+                onClick={logout}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
               >
-                <Settings size={18} />
-                Configurações
-              </Link>
+                <LogOut size={18} />
+                Sair
+              </button>
             </nav>
           </div>
         </div>
 
         <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-bold">
-              EP
+            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-accent-foreground">
+              {user?.name.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Eden Picão</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">Gestor</p>
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
             </div>
           </div>
         </div>
