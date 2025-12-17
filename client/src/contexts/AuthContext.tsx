@@ -11,7 +11,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string) => void;
+  login: (email: string, password: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
   isOperacional: boolean;
@@ -32,23 +32,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = (email: string) => {
+  const login = (email: string, password: string) => {
     let role: UserRole = 'gestor';
     let name = 'Gestor';
+    let isValid = false;
 
-    // Regra de negócio solicitada: email específico para operacional
-    if (email.toLowerCase() === 'cardumecozinha@gmail.com') {
+    // Validação de credenciais
+    if (email.toLowerCase() === 'cardumecozinha@gmail.com' && password === '2025286') {
       role = 'operacional';
       name = 'Equipe Cozinha';
-    } else if (email.toLowerCase() === 'cdm@cardumecozinha.com') {
+      isValid = true;
+    } else if (email.toLowerCase() === 'cdm@cardumecozinha.com' && password === '140387') {
       role = 'gestor';
       name = 'Gestor';
+      isValid = true;
     }
 
-    const newUser = { email, name, role };
-    setUser(newUser);
-    localStorage.setItem('sai_user', JSON.stringify(newUser));
-    setLocation('/');
+    if (isValid) {
+      const newUser = { email, name, role };
+      setUser(newUser);
+      localStorage.setItem('sai_user', JSON.stringify(newUser));
+      setLocation('/');
+      return true;
+    }
+    
+    return false;
   };
 
   const logout = () => {
