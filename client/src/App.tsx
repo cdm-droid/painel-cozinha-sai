@@ -12,6 +12,7 @@ import EstoqueGeral from "./pages/EstoqueGeral";
 import FichasTecnicas from "./pages/FichasTecnicas";
 import DiarioProducao from "./pages/DiarioProducao";
 import Perdas from "./pages/Perdas";
+import ContagemDiaria from "./pages/ContagemDiaria";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 
@@ -49,6 +50,7 @@ function Router() {
         <Route path="/fichas-tecnicas" component={FichasTecnicas} />
         <Route path="/diario-producao" component={DiarioProducao} />
         <Route path="/perdas" component={Perdas} />
+        <Route path="/contagem-diaria" component={ContagemDiaria} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

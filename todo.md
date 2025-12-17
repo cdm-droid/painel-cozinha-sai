@@ -36,3 +36,12 @@
   - [x] API para total de produções do dia
   - [x] API para custos e alertas
   - [x] Atualizar componente Home.tsx
+
+## Concluído
+- [x] Estoque de Contagem Diária no Painel Operacional
+  - [x] Criar página com 8 itens específicos
+  - [x] Blend 150g (mín 40), Blend 120g (mín 40)
+  - [x] Batata palito (mín 8kg), Manteiga (mín 1kg)
+  - [x] Queijo coalho (mín 1kg), Queijo prato (mín 120 fatias)
+  - [x] Bacon fatiado (mín 1kg), Óleo fritura (mín 10L)
+  - [x] Adicionar rota e menu de navegação

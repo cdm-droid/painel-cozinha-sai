@@ -3,7 +3,8 @@ import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
   Package, 
-  ClipboardList, 
+  ClipboardList,
+  ClipboardCheck, 
   ChefHat, 
   Menu, 
   X, 
@@ -34,12 +35,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { label: "Fichas Técnicas", icon: ChefHat, href: "/fichas-tecnicas" },
     { label: "Diário de Produção", icon: ClipboardList, href: "/diario-producao" },
     { label: "Registro de Perdas", icon: AlertOctagon, href: "/perdas" },
+    { label: "Contagem de Estoque", icon: ClipboardCheck, href: "/contagem-diaria" },
   ];
 
   // Filtra itens para nível operacional
   const filteredNavItems = isOperacional 
     ? navItems.filter(item => 
-        ["/estoque-critico", "/fichas-tecnicas", "/diario-producao", "/perdas"].includes(item.href)
+        ["/estoque-critico", "/fichas-tecnicas", "/diario-producao", "/perdas", "/contagem-diaria"].includes(item.href)
       )
     : navItems;
 
