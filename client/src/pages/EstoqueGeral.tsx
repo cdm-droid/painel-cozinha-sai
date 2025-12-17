@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { 
   Search, 
-  Filter, 
   Download, 
   Package,
   Plus,
@@ -23,7 +22,7 @@ import {
   AlertTriangle,
   ListFilter
 } from "lucide-react";
-import { insumos as initialInsumos } from "@/lib/mock-data";
+import { useData } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -31,7 +30,7 @@ export default function EstoqueGeral() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [contagemFilter, setContagemFilter] = useState<'todos' | 'critico' | 'geral'>('todos');
-  const [localInsumos, setLocalInsumos] = useState(initialInsumos);
+  const { insumos, updateInsumo } = useData();
   const { isOperacional } = useAuth();
   
   // Estado para armazenar contagens temporárias (apenas visual)
@@ -47,17 +46,18 @@ export default function EstoqueGeral() {
   };
 
   const toggleItemAtivo = (id: string) => {
-    setLocalInsumos(prev => prev.map(item => 
-      item.id === id ? { ...item, ativo: !item.ativo } : item
-    ));
-    toast.success("Status do item atualizado.");
+    const item = insumos.find(i => i.id === id);
+    if (item) {
+      updateInsumo({ ...item, ativo: !item.ativo });
+      toast.success("Status do item atualizado.");
+    }
   };
   
   // Obter categorias únicas
-  const categories = Array.from(new Set(localInsumos.map(item => item.categoria)));
+  const categories = Array.from(new Set(insumos.map(item => item.categoria)));
 
   // Filtrar itens
-  const filteredItems = localInsumos.filter(item => {
+  const filteredItems = insumos.filter(item => {
     // Filtro de busca
     const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           item.id.includes(searchTerm);
@@ -164,7 +164,7 @@ export default function EstoqueGeral() {
                   onClick={() => setCategoryFilter(null)}
                 >
                   Todas as categorias
-                  <span className="ml-auto text-xs text-muted-foreground">{localInsumos.length}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{insumos.length}</span>
                 </Button>
                 {categories.map(cat => (
                   <Button 
@@ -175,7 +175,7 @@ export default function EstoqueGeral() {
                   >
                     {cat}
                     <span className="ml-auto text-xs text-muted-foreground">
-                      {localInsumos.filter(i => i.categoria === cat).length}
+                      {insumos.filter(i => i.categoria === cat).length}
                     </span>
                   </Button>
                 ))}

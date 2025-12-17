@@ -26,7 +26,8 @@ import {
   Download,
   Plus
 } from "lucide-react";
-import { fichasTecnicas as initialFichas, FichaTecnica } from "@/lib/mock-data";
+import { FichaTecnica } from "@/lib/mock-data";
+import { useData } from "@/lib/storage";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,7 +37,7 @@ import { toast } from "sonner";
 export default function FichasTecnicas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [openItems, setOpenItems] = useState<string[]>([]);
-  const [fichas, setFichas] = useState<FichaTecnica[]>(initialFichas);
+  const { fichas, updateFicha, deleteFicha } = useData();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingFicha, setEditingFicha] = useState<FichaTecnica | null>(null);
   const { isOperacional } = useAuth();
@@ -58,18 +59,12 @@ export default function FichasTecnicas() {
   };
 
   const handleSave = (savedFicha: FichaTecnica) => {
-    if (editingFicha) {
-      // Editando existente
-      setFichas(prev => prev.map(f => f.id === savedFicha.id ? savedFicha : f));
-    } else {
-      // Criando nova
-      setFichas(prev => [...prev, savedFicha]);
-    }
+    updateFicha(savedFicha);
   };
 
   const handleDelete = (id: string) => {
     if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
-      setFichas(prev => prev.filter(f => f.id !== id));
+      deleteFicha(id);
       toast.success("Ficha técnica excluída.");
     }
   };
