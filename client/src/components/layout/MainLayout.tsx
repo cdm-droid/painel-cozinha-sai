@@ -71,18 +71,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
               {navItems.map((item) => {
                 const isActive = location === item.href;
                 return (
-                  <Link key={item.href} href={item.href}>
-                    <a 
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                        isActive 
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" 
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <item.icon size={18} />
-                      {item.label}
-                    </a>
+                  <Link 
+                    key={item.href} 
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                      isActive 
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" 
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <item.icon size={18} />
+                    {item.label}
                   </Link>
                 );
               })}
@@ -94,11 +94,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Sistema
             </p>
             <nav className="space-y-1">
-              <Link href="/configuracoes">
-                <a className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                  <Settings size={18} />
-                  Configurações
-                </a>
+              <Link 
+                href="/configuracoes"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+              >
+                <Settings size={18} />
+                Configurações
               </Link>
             </nav>
           </div>
