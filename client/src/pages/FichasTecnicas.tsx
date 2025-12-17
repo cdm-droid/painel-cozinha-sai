@@ -17,14 +17,25 @@ import {
   DollarSign,
   PieChart,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Package,
+  Utensils,
+  Eye,
+  Edit,
+  Trash2,
+  Download,
+  Plus
 } from "lucide-react";
-import { fichasTecnicas } from "@/lib/mock-data";
+import { fichasTecnicas, FichaTecnica } from "@/lib/mock-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function FichasTecnicas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [openItems, setOpenItems] = useState<string[]>([]);
+  const [selectedFicha, setSelectedFicha] = useState<FichaTecnica | null>(null);
+  const { isOperacional } = useAuth();
 
   const toggleItem = (id: string) => {
     setOpenItems(prev => 
@@ -42,13 +53,25 @@ export default function FichasTecnicas() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground font-display">Fichas Técnicas</h1>
-          <p className="text-muted-foreground mt-1">Composição de custos e ingredientes dos produtos.</p>
+          <p className="text-muted-foreground mt-1">
+            {isOperacional 
+              ? "Consulta de receitas e modos de preparo." 
+              : "Gerenciamento de receitas, custos e precificação."}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <ChefHat size={16} />
-            Nova Ficha
-          </Button>
+          {!isOperacional && (
+            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus size={16} />
+              Nova Ficha
+            </Button>
+          )}
+          {!isOperacional && (
+            <Button variant="outline" className="gap-2">
+              <Download size={16} />
+              Exportar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -87,29 +110,104 @@ export default function FichasTecnicas() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 w-full sm:w-auto">
-                <div className="text-center sm:text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Custo Total</p>
-                  <p className="font-mono font-bold text-destructive">R$ {ficha.custoTotal.toFixed(2)}</p>
-                </div>
-                <div className="text-center sm:text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Preço Venda</p>
-                  <p className="font-mono font-bold text-success">R$ {ficha.precoVenda.toFixed(2)}</p>
-                </div>
-                <div className="text-center sm:text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Markup</p>
-                  <p className="font-mono font-bold">{ficha.markup.toFixed(2)}</p>
-                </div>
-                <div className="text-center sm:text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">CMV</p>
-                  <Badge variant="outline" className="font-mono">{(ficha.cmv * 100).toFixed(1)}%</Badge>
-                </div>
+                {isOperacional ? (
+                  // Visão Operacional Simplificada
+                  <>
+                    <div className="text-center sm:text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Rendimento</p>
+                      <p className="font-mono font-bold">{ficha.rendimentoBase} {ficha.unidadeRendimento}</p>
+                    </div>
+                    <div className="col-span-2 sm:col-span-3 flex justify-end items-center">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="gap-2">
+                            <Eye size={16} /> Ver Modo de Preparo
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-xl font-display">
+                              <Utensils className="h-5 w-5 text-primary" />
+                              {ficha.produto}
+                            </DialogTitle>
+                            <DialogDescription>Receita e modo de preparo detalhado.</DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="mt-4 space-y-6">
+                            <div className="p-4 bg-secondary/30 rounded-lg border border-border">
+                              <p className="text-xs text-muted-foreground uppercase font-bold">Rendimento Base</p>
+                              <p className="text-lg font-mono font-bold">
+                                {ficha.rendimentoBase} <span className="text-sm font-normal text-muted-foreground">{ficha.unidadeRendimento}</span>
+                              </p>
+                            </div>
+
+                            <div>
+                              <h3 className="text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <Package className="h-4 w-4" /> Ingredientes
+                              </h3>
+                              <div className="rounded-md border border-border overflow-hidden">
+                                <Table>
+                                  <TableHeader className="bg-secondary/50">
+                                    <TableRow>
+                                      <TableHead>Insumo</TableHead>
+                                      <TableHead className="text-right">Qtd.</TableHead>
+                                      <TableHead>Unid.</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {ficha.componentes.map((comp, idx) => (
+                                      <TableRow key={idx}>
+                                        <TableCell className="font-medium">{comp.nome}</TableCell>
+                                        <TableCell className="text-right font-mono">{comp.quantidade}</TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">{comp.unidade}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h3 className="text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <ChefHat className="h-4 w-4" /> Modo de Preparo
+                              </h3>
+                              <div className="p-4 bg-secondary/10 rounded-lg border border-border text-sm leading-relaxed whitespace-pre-line">
+                                {ficha.modoPreparo || "Modo de preparo não cadastrado."}
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </>
+                ) : (
+                  // Visão Gerencial Completa
+                  <>
+                    <div className="text-center sm:text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Custo Total</p>
+                      <p className="font-mono font-bold text-destructive">R$ {ficha.custoTotal.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Preço Venda</p>
+                      <p className="font-mono font-bold text-success">R$ {ficha.precoVenda.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Markup</p>
+                      <p className="font-mono font-bold">{ficha.markup.toFixed(2)}</p>
+                    </div>
+                    <div className="text-center sm:text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">CMV</p>
+                      <Badge variant="outline" className="font-mono">{(ficha.cmv * 100).toFixed(1)}%</Badge>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             <CollapsibleContent>
               <div className="border-t border-border bg-secondary/10 p-4">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
+                  <div className={isOperacional ? "lg:col-span-3" : "lg:col-span-2"}>
                     <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
                       <ChefHat size={14} /> Componentes
                     </h4>
@@ -120,8 +218,12 @@ export default function FichasTecnicas() {
                             <TableHead className="text-xs">Insumo</TableHead>
                             <TableHead className="text-xs text-right">Qtd</TableHead>
                             <TableHead className="text-xs text-right">Unid.</TableHead>
-                            <TableHead className="text-xs text-right">Custo Unit.</TableHead>
-                            <TableHead className="text-xs text-right">Subtotal</TableHead>
+                            {!isOperacional && (
+                              <>
+                                <TableHead className="text-xs text-right">Custo Unit.</TableHead>
+                                <TableHead className="text-xs text-right">Subtotal</TableHead>
+                              </>
+                            )}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -130,53 +232,70 @@ export default function FichasTecnicas() {
                               <TableCell className="font-medium">{comp.nome}</TableCell>
                               <TableCell className="text-right font-mono">{comp.quantidade}</TableCell>
                               <TableCell className="text-right text-muted-foreground">{comp.unidade}</TableCell>
-                              <TableCell className="text-right font-mono text-muted-foreground">R$ {comp.custoUnitario.toFixed(2)}</TableCell>
-                              <TableCell className="text-right font-mono font-bold">R$ {comp.subtotal.toFixed(2)}</TableCell>
+                              {!isOperacional && (
+                                <>
+                                  <TableCell className="text-right font-mono text-muted-foreground">R$ {comp.custoUnitario.toFixed(2)}</TableCell>
+                                  <TableCell className="text-right font-mono font-bold">R$ {comp.subtotal.toFixed(2)}</TableCell>
+                                </>
+                              )}
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
                     </div>
+                    
+                    {isOperacional && (
+                      <div className="mt-6">
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                          <Utensils size={14} /> Modo de Preparo
+                        </h4>
+                        <div className="p-4 bg-background rounded-lg border border-border text-sm leading-relaxed whitespace-pre-line">
+                          {ficha.modoPreparo || "Modo de preparo não cadastrado."}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                      <PieChart size={14} /> Análise de Custo
-                    </h4>
-                    <Card className="bg-background border-border">
-                      <CardContent className="p-4 space-y-4">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Lucro Bruto Estimado</span>
-                            <span className="font-bold text-success">R$ {(ficha.precoVenda - ficha.custoTotal).toFixed(2)}</span>
+                  {!isOperacional && (
+                    <div>
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                        <PieChart size={14} /> Análise de Custo
+                      </h4>
+                      <Card className="bg-background border-border">
+                        <CardContent className="p-4 space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Lucro Bruto Estimado</span>
+                              <span className="font-bold text-success">R$ {(ficha.precoVenda - ficha.custoTotal).toFixed(2)}</span>
+                            </div>
+                            <div className="h-2 bg-secondary rounded-full overflow-hidden flex">
+                              <div 
+                                className="h-full bg-destructive" 
+                                style={{ width: `${(ficha.cmv * 100)}%` }}
+                                title="Custo"
+                              />
+                              <div 
+                                className="h-full bg-success" 
+                                style={{ width: `${100 - (ficha.cmv * 100)}%` }}
+                                title="Lucro"
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                              <span>Custo ({ (ficha.cmv * 100).toFixed(0) }%)</span>
+                              <span>Margem ({ (100 - (ficha.cmv * 100)).toFixed(0) }%)</span>
+                            </div>
                           </div>
-                          <div className="h-2 bg-secondary rounded-full overflow-hidden flex">
-                            <div 
-                              className="h-full bg-destructive" 
-                              style={{ width: `${(ficha.cmv * 100)}%` }}
-                              title="Custo"
-                            />
-                            <div 
-                              className="h-full bg-success" 
-                              style={{ width: `${100 - (ficha.cmv * 100)}%` }}
-                              title="Lucro"
-                            />
-                          </div>
-                          <div className="flex justify-between text-[10px] text-muted-foreground">
-                            <span>Custo ({ (ficha.cmv * 100).toFixed(0) }%)</span>
-                            <span>Margem ({ (100 - (ficha.cmv * 100)).toFixed(0) }%)</span>
-                          </div>
-                        </div>
 
-                        <div className="pt-4 border-t border-border">
-                          <Button variant="outline" size="sm" className="w-full">
-                            <DollarSign size={14} className="mr-2" />
-                            Atualizar Preços
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                          <div className="pt-4 border-t border-border">
+                            <Button variant="outline" size="sm" className="w-full">
+                              <DollarSign size={14} className="mr-2" />
+                              Atualizar Preços
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
                 </div>
               </div>
             </CollapsibleContent>

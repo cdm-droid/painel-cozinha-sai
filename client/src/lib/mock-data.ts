@@ -20,6 +20,9 @@ export interface FichaTecnica {
   precoVenda: number;
   markup: number;
   cmv: number;
+  rendimentoBase: number;
+  unidadeRendimento: string;
+  modoPreparo: string;
   componentes: Componente[];
 }
 
@@ -62,6 +65,9 @@ export const fichasTecnicas: FichaTecnica[] = [
     precoVenda: 12.00,
     markup: 3.59,
     cmv: 0.278,
+    rendimentoBase: 12,
+    unidadeRendimento: "fatias",
+    modoPreparo: "1. Derreta a manteiga e o chocolate.\n2. Bata os ovos com o açúcar até obter um creme claro.\n3. Misture o chocolate derretido aos ovos.\n4. Incorpore a farinha peneirada e o achocolatado.\n5. Asse em forno pré-aquecido a 180°C por 25 minutos.",
     componentes: [
       { insumoId: "4803940", nome: "(IN) ACHOCOLATADO", unidade: "Kg", quantidade: 0.2, custoUnitario: 30.90, subtotal: 6.18 },
       { insumoId: "4218390", nome: "(IN) Açúcar cristal", unidade: "Kg", quantidade: 0.55, custoUnitario: 3.39, subtotal: 1.86 },
@@ -80,6 +86,9 @@ export const fichasTecnicas: FichaTecnica[] = [
     precoVenda: 6.00,
     markup: 2.00,
     cmv: 0.50,
+    rendimentoBase: 1,
+    unidadeRendimento: "unidade",
+    modoPreparo: "1. Servir gelado com gelo e limão (opcional).",
     componentes: [
       { insumoId: "2001", nome: "(IT) Coca-cola C", unidade: "Un", quantidade: 1, custoUnitario: 3.00, subtotal: 3.00 },
     ]
@@ -91,6 +100,9 @@ export const fichasTecnicas: FichaTecnica[] = [
     precoVenda: 15.00,
     markup: 18.07,
     cmv: 0.055,
+    rendimentoBase: 10,
+    unidadeRendimento: "porções",
+    modoPreparo: "1. Hidrate a gelatina (se houver) conforme instruções.\n2. Aqueça o creme de leite, o leite e o açúcar até quase ferver.\n3. Adicione o chocolate e misture até derreter.\n4. Incorpore a cachaça e a gelatina.\n5. Distribua em taças e leve à geladeira por 4 horas.",
     componentes: [
       { insumoId: "4218390", nome: "(IN) Açúcar cristal", unidade: "Kg", quantidade: 0.15, custoUnitario: 3.39, subtotal: 0.51 },
       { insumoId: "1006", nome: "(IN) Cachaça", unidade: "L", quantidade: 0.15, custoUnitario: 65.00, subtotal: 9.75 },
