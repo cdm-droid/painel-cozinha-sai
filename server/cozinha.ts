@@ -7,11 +7,13 @@ import {
   contagensEstoque, 
   perdas, 
   diarioProducao,
+  contagensDiarias,
   InsertInsumo,
   InsertFichaTecnica,
   InsertContagemEstoque,
   InsertPerda,
   InsertDiarioProducao,
+  InsertContagemDiaria,
   ComponenteFicha
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -570,4 +572,120 @@ export const dashboardRouter = router({
 
     return producoes;
   }),
+});
+
+
+// ============== CONTAGENS DIÁRIAS ==============
+
+export const contagensDiariasRouter = router({
+  // Listar histórico de contagens
+  list: publicProcedure
+    .input(z.object({
+      dataInicio: z.string().optional(),
+      dataFim: z.string().optional(),
+      itemNome: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      let query = db.select().from(contagensDiarias);
+      
+      if (input?.itemNome) {
+        query = query.where(like(contagensDiarias.itemNome, `%${input.itemNome}%`)) as typeof query;
+      }
+
+      return await query.orderBy(desc(contagensDiarias.dataContagem));
+    }),
+
+  // Listar contagens de uma data específica
+  listByDate: publicProcedure
+    .input(z.object({
+      data: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const dataInicio = new Date(input.data);
+      dataInicio.setHours(0, 0, 0, 0);
+      
+      const dataFim = new Date(input.data);
+      dataFim.setHours(23, 59, 59, 999);
+
+      const result = await db.select()
+        .from(contagensDiarias)
+        .where(and(
+          gte(contagensDiarias.dataContagem, dataInicio),
+          sql`${contagensDiarias.dataContagem} <= ${dataFim}`
+        ))
+        .orderBy(asc(contagensDiarias.itemNome));
+
+      return result;
+    }),
+
+  // Salvar contagem diária (múltiplos itens)
+  saveContagem: publicProcedure
+    .input(z.object({
+      itens: z.array(z.object({
+        itemNome: z.string(),
+        estoqueMinimo: z.string(),
+        estoqueContado: z.string(),
+        unidade: z.string(),
+        status: z.enum(["OK", "Baixo", "Crítico"]),
+      })),
+      responsavel: z.string().optional(),
+      observacao: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const dataContagem = new Date();
+      
+      // Inserir cada item da contagem
+      for (const item of input.itens) {
+        await db.insert(contagensDiarias).values({
+          dataContagem,
+          itemNome: item.itemNome,
+          estoqueMinimo: item.estoqueMinimo,
+          estoqueContado: item.estoqueContado,
+          unidade: item.unidade,
+          status: item.status,
+          responsavel: input.responsavel,
+          observacao: input.observacao,
+        });
+      }
+
+      return { success: true, count: input.itens.length };
+    }),
+
+  // Obter resumo de contagens por período
+  resumo: publicProcedure
+    .input(z.object({
+      dias: z.number().default(7),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const dias = input?.dias || 7;
+      const dataInicio = new Date();
+      dataInicio.setDate(dataInicio.getDate() - dias);
+      dataInicio.setHours(0, 0, 0, 0);
+
+      const result = await db.select({
+        data: sql<string>`DATE(${contagensDiarias.dataContagem})`,
+        totalItens: sql<number>`COUNT(*)`,
+        criticos: sql<number>`SUM(CASE WHEN ${contagensDiarias.status} = 'Crítico' THEN 1 ELSE 0 END)`,
+        baixos: sql<number>`SUM(CASE WHEN ${contagensDiarias.status} = 'Baixo' THEN 1 ELSE 0 END)`,
+        ok: sql<number>`SUM(CASE WHEN ${contagensDiarias.status} = 'OK' THEN 1 ELSE 0 END)`,
+      })
+      .from(contagensDiarias)
+      .where(gte(contagensDiarias.dataContagem, dataInicio))
+      .groupBy(sql`DATE(${contagensDiarias.dataContagem})`)
+      .orderBy(desc(sql`DATE(${contagensDiarias.dataContagem})`));
+
+      return result;
+    }),
 });

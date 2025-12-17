@@ -45,3 +45,10 @@
   - [x] Queijo coalho (mín 1kg), Queijo prato (mín 120 fatias)
   - [x] Bacon fatiado (mín 1kg), Óleo fritura (mín 10L)
   - [x] Adicionar rota e menu de navegação
+
+## Concluído
+- [x] Histórico de Contagens Diárias
+  - [x] Criar tabela no banco de dados
+  - [x] APIs para salvar e listar contagens
+  - [x] Visualização do histórico na página
+  - [x] Resumo dos últimos 7 dias

@@ -133,3 +133,23 @@ export const diarioProducao = mysqlTable("diario_producao", {
 
 export type DiarioProducao = typeof diarioProducao.$inferSelect;
 export type InsertDiarioProducao = typeof diarioProducao.$inferInsert;
+
+/**
+ * Contagens Diárias de Estoque
+ */
+export const contagensDiarias = mysqlTable("contagens_diarias", {
+  id: int("id").autoincrement().primaryKey(),
+  dataContagem: timestamp("dataContagem").defaultNow().notNull(),
+  itemNome: varchar("itemNome", { length: 255 }).notNull(),
+  estoqueMinimo: decimal("estoqueMinimo", { precision: 10, scale: 2 }).notNull(),
+  estoqueContado: decimal("estoqueContado", { precision: 10, scale: 2 }).notNull(),
+  unidade: varchar("unidade", { length: 50 }).notNull(),
+  status: mysqlEnum("status", ["OK", "Baixo", "Crítico"]).notNull(),
+  responsavel: varchar("responsavel", { length: 100 }),
+  observacao: text("observacao"),
+  userId: int("userId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ContagemDiaria = typeof contagensDiarias.$inferSelect;
+export type InsertContagemDiaria = typeof contagensDiarias.$inferInsert;

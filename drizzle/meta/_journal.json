@@ -22,6 +22,13 @@
       "when": 1765984926375,
       "tag": "0002_even_skin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1765986863746,
+      "tag": "0003_mushy_wild_pack",
+      "breakpoints": true
     }
   ]
 }
