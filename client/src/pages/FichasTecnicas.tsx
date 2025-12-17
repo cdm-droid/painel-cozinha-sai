@@ -26,15 +26,19 @@ import {
   Download,
   Plus
 } from "lucide-react";
-import { fichasTecnicas, FichaTecnica } from "@/lib/mock-data";
+import { fichasTecnicas as initialFichas, FichaTecnica } from "@/lib/mock-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { FichaTecnicaEditor } from "@/components/FichaTecnicaEditor";
+import { toast } from "sonner";
 
 export default function FichasTecnicas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [openItems, setOpenItems] = useState<string[]>([]);
-  const [selectedFicha, setSelectedFicha] = useState<FichaTecnica | null>(null);
+  const [fichas, setFichas] = useState<FichaTecnica[]>(initialFichas);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingFicha, setEditingFicha] = useState<FichaTecnica | null>(null);
   const { isOperacional } = useAuth();
 
   const toggleItem = (id: string) => {
@@ -43,7 +47,34 @@ export default function FichasTecnicas() {
     );
   };
 
-  const filteredFichas = fichasTecnicas.filter(ficha => 
+  const handleEdit = (ficha: FichaTecnica) => {
+    setEditingFicha(ficha);
+    setIsEditorOpen(true);
+  };
+
+  const handleNew = () => {
+    setEditingFicha(null);
+    setIsEditorOpen(true);
+  };
+
+  const handleSave = (savedFicha: FichaTecnica) => {
+    if (editingFicha) {
+      // Editando existente
+      setFichas(prev => prev.map(f => f.id === savedFicha.id ? savedFicha : f));
+    } else {
+      // Criando nova
+      setFichas(prev => [...prev, savedFicha]);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
+      setFichas(prev => prev.filter(f => f.id !== id));
+      toast.success("Ficha técnica excluída.");
+    }
+  };
+
+  const filteredFichas = fichas.filter(ficha => 
     ficha.produto.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ficha.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -61,7 +92,10 @@ export default function FichasTecnicas() {
         </div>
         <div className="flex gap-2">
           {!isOperacional && (
-            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button 
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={handleNew}
+            >
               <Plus size={16} />
               Nova Ficha
             </Button>
@@ -105,7 +139,15 @@ export default function FichasTecnicas() {
                 </CollapsibleTrigger>
                 <div>
                   <h3 className="font-bold text-lg font-display">{ficha.produto}</h3>
-                  <p className="text-xs text-muted-foreground font-mono">{ficha.id}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+                    <span>{ficha.id}</span>
+                    {ficha.pdvId && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-muted-foreground/50"></span>
+                        <span className="text-primary/80">PDV: {ficha.pdvId}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -208,9 +250,31 @@ export default function FichasTecnicas() {
               <div className="border-t border-border bg-secondary/10 p-4">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className={isOperacional ? "lg:col-span-3" : "lg:col-span-2"}>
-                    <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                      <ChefHat size={14} /> Componentes
-                    </h4>
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                        <ChefHat size={14} /> Componentes
+                      </h4>
+                      {!isOperacional && (
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 text-xs gap-1"
+                            onClick={() => handleEdit(ficha)}
+                          >
+                            <Edit size={12} /> Editar
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(ficha.id)}
+                          >
+                            <Trash2 size={12} /> Excluir
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     <div className="rounded-md border border-border bg-background overflow-hidden">
                       <Table>
                         <TableHeader className="bg-secondary/30">
@@ -243,57 +307,48 @@ export default function FichasTecnicas() {
                         </TableBody>
                       </Table>
                     </div>
-                    
-                    {isOperacional && (
-                      <div className="mt-6">
-                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                          <Utensils size={14} /> Modo de Preparo
-                        </h4>
-                        <div className="p-4 bg-background rounded-lg border border-border text-sm leading-relaxed whitespace-pre-line">
-                          {ficha.modoPreparo || "Modo de preparo não cadastrado."}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {!isOperacional && (
-                    <div>
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                        <PieChart size={14} /> Análise de Custo
-                      </h4>
-                      <Card className="bg-background border-border">
-                        <CardContent className="p-4 space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Lucro Bruto Estimado</span>
-                              <span className="font-bold text-success">R$ {(ficha.precoVenda - ficha.custoTotal).toFixed(2)}</span>
-                            </div>
-                            <div className="h-2 bg-secondary rounded-full overflow-hidden flex">
-                              <div 
-                                className="h-full bg-destructive" 
-                                style={{ width: `${(ficha.cmv * 100)}%` }}
-                                title="Custo"
-                              />
-                              <div 
-                                className="h-full bg-success" 
-                                style={{ width: `${100 - (ficha.cmv * 100)}%` }}
-                                title="Lucro"
-                              />
-                            </div>
-                            <div className="flex justify-between text-[10px] text-muted-foreground">
-                              <span>Custo ({ (ficha.cmv * 100).toFixed(0) }%)</span>
-                              <span>Margem ({ (100 - (ficha.cmv * 100)).toFixed(0) }%)</span>
-                            </div>
+                    <div className="space-y-6">
+                      <div className="bg-background p-4 rounded-lg border border-border shadow-sm">
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                          <PieChart size={14} /> Análise Financeira
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Custo Total</span>
+                            <span className="font-mono font-bold">R$ {ficha.custoTotal.toFixed(2)}</span>
                           </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Preço Sugerido (Markup 3.0)</span>
+                            <span className="font-mono">R$ {(ficha.custoTotal * 3).toFixed(2)}</span>
+                          </div>
+                          <div className="h-px bg-border my-2"></div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Preço Atual</span>
+                            <span className="font-mono font-bold text-primary">R$ {ficha.precoVenda.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Lucro Bruto</span>
+                            <span className="font-mono text-success">R$ {(ficha.precoVenda - ficha.custoTotal).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
 
-                          <div className="pt-4 border-t border-border">
-                            <Button variant="outline" size="sm" className="w-full">
-                              <DollarSign size={14} className="mr-2" />
-                              Atualizar Preços
-                            </Button>
+                      {ficha.nomeOnline && (
+                        <div className="bg-background p-4 rounded-lg border border-border shadow-sm">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                            <Package size={14} /> Integração PDV
+                          </h4>
+                          <p className="text-xs text-muted-foreground mb-1">Nome no Cardápio Online:</p>
+                          <p className="text-sm font-medium italic mb-3">"{ficha.nomeOnline}"</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="font-mono text-xs">ID: {ficha.pdvId}</Badge>
+                            <Badge variant="outline" className="text-xs text-success border-success/30 bg-success/5">Sincronizado</Badge>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -302,6 +357,13 @@ export default function FichasTecnicas() {
           </Collapsible>
         ))}
       </div>
+
+      <FichaTecnicaEditor 
+        ficha={editingFicha}
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        onSave={handleSave}
+      />
     </div>
   );
 }
