@@ -16,18 +16,31 @@ import {
   Filter, 
   Download, 
   AlertTriangle,
-  ArrowUpDown
+  Loader2
 } from "lucide-react";
-import { insumos } from "@/lib/mock-data";
+import { trpc } from "@/lib/trpc";
 
 export default function EstoqueCritico() {
   const [searchTerm, setSearchTerm] = useState("");
   
+  // Buscar insumos do backend
+  const { data: insumos = [], isLoading } = trpc.insumos.list.useQuery({
+    search: searchTerm || undefined,
+  });
+  
   // Filtrar apenas itens com status Crítico ou Baixo
   const criticalItems = insumos.filter(item => 
-    (item.status === "Crítico" || item.status === "Baixo") &&
-    item.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    item.status === "Crítico" || item.status === "Baixo"
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando estoque crítico...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -49,7 +62,7 @@ export default function EstoqueCritico() {
           <div className="flex flex-col sm:flex-row justify-between gap-4">
             <CardTitle className="text-lg font-display flex items-center gap-2">
               <AlertTriangle className="text-warning h-5 w-5" />
-              Itens em Alerta
+              Itens em Alerta ({criticalItems.length})
             </CardTitle>
             <div className="flex gap-2">
               <div className="relative w-full sm:w-64">
@@ -79,7 +92,6 @@ export default function EstoqueCritico() {
                   <TableHead className="text-right font-bold">Estoque Atual</TableHead>
                   <TableHead className="text-right font-bold">Mínimo</TableHead>
                   <TableHead className="text-right font-bold">Unidade</TableHead>
-                  <TableHead className="text-right font-bold">Última Conf.</TableHead>
                   <TableHead className="text-right font-bold">Ação</TableHead>
                 </TableRow>
               </TableHeader>
@@ -100,28 +112,27 @@ export default function EstoqueCritico() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">{item.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.categoria}</TableCell>
-                      <TableCell className="text-right font-mono font-bold text-lg">
-                        {item.estoqueAtual}
+                      <TableCell className="text-muted-foreground text-sm">{item.categoria}</TableCell>
+                      <TableCell className="text-right font-mono font-bold text-destructive">
+                        {parseFloat(item.estoqueAtual).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-muted-foreground">
-                        {item.estoqueMinimo}
+                        {parseFloat(item.estoqueMinimo).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">{item.unidade}</TableCell>
-                      <TableCell className="text-right text-muted-foreground text-xs">
-                        {item.ultimaConferencia}
-                      </TableCell>
+                      <TableCell className="text-right text-sm">{item.unidade}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                          <ArrowUpDown className="h-4 w-4" />
+                        <Button variant="outline" size="sm" className="text-xs">
+                          Repor
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                      Nenhum item crítico encontrado.
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>Nenhum item em estado crítico encontrado.</p>
+                      <p className="text-sm">Todos os estoques estão em níveis adequados.</p>
                     </TableCell>
                   </TableRow>
                 )}

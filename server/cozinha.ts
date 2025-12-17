@@ -384,26 +384,70 @@ export const diarioProducaoRouter = router({
   // Registrar produção
   create: publicProcedure
     .input(z.object({
-      fichaTecnicaId: z.number(),
+      fichaTecnicaId: z.number().optional(),
+      produto: z.string(),
       quantidadeProduzida: z.string(),
+      unidade: z.string().optional(),
+      responsavel: z.string().optional(),
+      status: z.enum(["Planejado", "Em Produção", "Concluído"]).default("Planejado"),
       observacao: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Buscar ficha técnica para calcular custo
-      const [ficha] = await db.select().from(fichasTecnicas).where(eq(fichasTecnicas.id, input.fichaTecnicaId)).limit(1);
-      const custoTotal = ficha 
-        ? (parseFloat(input.quantidadeProduzida) * parseFloat(ficha.custoTotal)).toFixed(2)
-        : "0";
+      // Buscar ficha técnica para calcular custo (se fornecida)
+      let custoTotal = "0";
+      if (input.fichaTecnicaId) {
+        const [ficha] = await db.select().from(fichasTecnicas).where(eq(fichasTecnicas.id, input.fichaTecnicaId)).limit(1);
+        if (ficha) {
+          custoTotal = (parseFloat(input.quantidadeProduzida) * parseFloat(ficha.custoTotal)).toFixed(2);
+        }
+      }
 
       const result = await db.insert(diarioProducao).values({
-        ...input,
+        fichaTecnicaId: input.fichaTecnicaId || null,
+        produto: input.produto,
+        quantidadeProduzida: input.quantidadeProduzida,
+        unidade: input.unidade || "un",
+        responsavel: input.responsavel || "Equipe",
         custoTotal,
+        observacao: input.observacao,
       });
 
       return { success: true, id: result[0].insertId };
+    }),
+
+  // Atualizar status da produção
+  update: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(["Planejado", "Em Produção", "Concluído"]).optional(),
+      responsavel: z.string().optional(),
+      observacao: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const { id, ...updates } = input;
+      await db.update(diarioProducao).set(updates).where(eq(diarioProducao.id, id));
+
+      return { success: true };
+    }),
+
+  // Excluir produção
+  delete: publicProcedure
+    .input(z.object({
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.delete(diarioProducao).where(eq(diarioProducao.id, input.id));
+
+      return { success: true };
     }),
 });
 

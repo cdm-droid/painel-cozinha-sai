@@ -21,69 +21,84 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Trash2, 
   AlertOctagon, 
-  Plus,
-  Save
+  Save,
+  Loader2
 } from "lucide-react";
-import { insumos } from "@/lib/mock-data";
+import { useData } from "@/lib/storage";
+import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-interface PerdaItem {
-  id: string;
-  insumo: string;
-  quantidade: number;
-  unidade: string;
-  motivo: string;
-  observacao: string;
-  data: string;
-  responsavel: string;
-}
-
 export default function Perdas() {
-  const [perdas, setPerdas] = useState<PerdaItem[]>([
-    { 
-      id: "1", 
-      insumo: "(IN) Alface americano", 
-      quantidade: 2, 
-      unidade: "Un", 
-      motivo: "Validade", 
-      observacao: "Folhas murchas", 
-      data: new Date().toLocaleDateString('pt-BR'),
-      responsavel: "João"
+  const { insumos, isLoading: insumosLoading } = useData();
+  
+  // Buscar perdas do backend
+  const { data: perdasData = [], isLoading: perdasLoading, refetch: refetchPerdas } = trpc.perdas.list.useQuery({});
+  
+  // Mutation para criar perda
+  const createPerdaMutation = trpc.perdas.create.useMutation({
+    onSuccess: () => {
+      refetchPerdas();
+      toast.success("Registro de perda adicionado.");
+    },
+    onError: (error) => {
+      toast.error("Erro ao registrar perda: " + error.message);
     }
-  ]);
+  });
 
   const [novoInsumoId, setNovoInsumoId] = useState("");
   const [novaQuantidade, setNovaQuantidade] = useState("");
   const [novoMotivo, setNovoMotivo] = useState("");
   const [novaObservacao, setNovaObservacao] = useState("");
 
-  const handleAddPerda = () => {
+  const handleAddPerda = async () => {
     if (!novoInsumoId || !novaQuantidade || !novoMotivo) {
       toast.error("Preencha os campos obrigatórios.");
       return;
     }
 
-    const insumoSelecionado = insumos.find(i => i.id === novoInsumoId);
-    if (!insumoSelecionado) return;
+    try {
+      await createPerdaMutation.mutateAsync({
+        insumoId: parseInt(novoInsumoId),
+        quantidade: novaQuantidade,
+        motivo: novoMotivo,
+        observacao: novaObservacao || undefined,
+      });
 
-    const novaPerda: PerdaItem = {
-      id: Date.now().toString(),
-      insumo: insumoSelecionado.nome,
-      quantidade: Number(novaQuantidade),
-      unidade: insumoSelecionado.unidade,
-      motivo: novoMotivo,
-      observacao: novaObservacao,
-      data: new Date().toLocaleDateString('pt-BR'),
-      responsavel: "Equipe Cozinha" // Pega do contexto de auth idealmente
-    };
-
-    setPerdas([novaPerda, ...perdas]);
-    setNovoInsumoId("");
-    setNovaQuantidade("");
-    setNovoMotivo("");
-    setNovaObservacao("");
-    toast.success("Registro de perda adicionado.");
+      setNovoInsumoId("");
+      setNovaQuantidade("");
+      setNovoMotivo("");
+      setNovaObservacao("");
+    } catch (error) {
+      console.error("Erro ao registrar perda:", error);
+    }
   };
+
+  // Converter dados do backend para exibição
+  const perdas = perdasData.map((perda: any) => {
+    const insumo = insumos.find(i => i.id === String(perda.insumoId));
+    return {
+      id: String(perda.id),
+      insumo: insumo?.nome || `Insumo #${perda.insumoId}`,
+      quantidade: parseFloat(perda.quantidade) || 0,
+      unidade: insumo?.unidade || "Un",
+      motivo: perda.motivo,
+      observacao: perda.observacao || "",
+      data: perda.createdAt ? new Date(perda.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+      responsavel: "Equipe Cozinha",
+      custoPerda: parseFloat(perda.custoPerda) || 0,
+    };
+  });
+
+  const isLoading = insumosLoading || perdasLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando dados...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -157,8 +172,18 @@ export default function Perdas() {
               />
             </div>
 
-            <Button variant="destructive" className="w-full mt-2" onClick={handleAddPerda}>
-              <Save className="mr-2 h-4 w-4" /> Registrar Perda
+            <Button 
+              variant="destructive" 
+              className="w-full mt-2" 
+              onClick={handleAddPerda}
+              disabled={createPerdaMutation.isPending}
+            >
+              {createPerdaMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Registrar Perda
             </Button>
           </CardContent>
         </Card>
@@ -177,36 +202,40 @@ export default function Perdas() {
                     <TableHead className="font-bold">Insumo</TableHead>
                     <TableHead className="text-right font-bold">Qtd</TableHead>
                     <TableHead className="font-bold">Motivo</TableHead>
-                    <TableHead className="font-bold">Resp.</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="text-right font-bold">Custo</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {perdas.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-secondary/30 transition-colors">
-                      <TableCell className="text-xs font-mono text-muted-foreground">{item.data}</TableCell>
-                      <TableCell className="font-medium">
-                        {item.insumo}
-                        {item.observacao && (
-                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">{item.observacao}</p>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-bold text-destructive">
-                        -{item.quantidade} {item.unidade}
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                          {item.motivo}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{item.responsavel}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                          <Trash2 size={14} />
-                        </Button>
+                  {perdas.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        Nenhuma perda registrada ainda.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    perdas.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-secondary/30 transition-colors">
+                        <TableCell className="text-xs font-mono text-muted-foreground">{item.data}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.insumo}
+                          {item.observacao && (
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">{item.observacao}</p>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-destructive">
+                          -{item.quantidade} {item.unidade}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                            {item.motivo}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-destructive">
+                          R$ {item.custoPerda.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>

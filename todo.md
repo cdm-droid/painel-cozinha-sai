@@ -1,0 +1,31 @@
+# Painel Cozinha Saí - TODO
+
+## Concluídos
+- [x] Estrutura básica do sistema
+- [x] Autenticação com níveis de acesso (Gestor/Operacional)
+- [x] Página de Estoque Geral com filtros
+- [x] Página de Estoque Crítico
+- [x] Página de Fichas Técnicas
+- [x] Página de Diário de Produção
+- [x] Página de Perdas
+- [x] Calculadora de receitas
+- [x] Backend com banco de dados PostgreSQL
+- [x] APIs TRPC para insumos e fichas técnicas
+- [x] Aplicar identidade visual Saí Burguer
+- [x] Importar fichas técnicas completas para o banco de dados (195 fichas)
+- [x] Importar insumos completos para o banco de dados (105 insumos)
+- [x] Atualizar página de Estoque Geral para usar backend TRPC
+- [x] Atualizar página de Estoque Crítico para usar backend TRPC
+- [x] Atualizar página de Fichas Técnicas para usar backend TRPC
+- [x] Atualizar página de Diário de Produção para usar backend TRPC
+- [x] Atualizar página de Perdas para usar backend TRPC
+- [x] Testar persistência entre perfis (Gestor e Operacional)
+- [x] Adicionar campos de produto, responsável e status no Diário de Produção
+- [x] Criar testes automatizados para validar persistência
+
+## Pendentes (Melhorias Futuras)
+- [ ] Atualizar página Home (Dashboard) para usar dados reais do backend
+- [ ] Implementar autenticação real com banco de dados
+- [ ] Adicionar funcionalidade de backup/exportação
+- [ ] Integração completa com Saipos PDV
+- [ ] Relatórios de custos e CMV

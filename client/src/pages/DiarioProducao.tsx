@@ -10,19 +10,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { 
   Calendar as CalendarIcon, 
   Plus, 
-  Save, 
   Trash2,
   Calculator,
   ChefHat,
-  ArrowRight,
   Package,
-  Clock,
-  CheckCircle2,
-  Utensils
+  Utensils,
+  Loader2
 } from "lucide-react";
 import { 
   Dialog,
@@ -40,7 +36,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { fichasTecnicas, FichaTecnica } from "@/lib/mock-data";
+import { useData, FichaTecnica } from "@/lib/storage";
+import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 interface ProducaoItem {
@@ -55,11 +52,42 @@ interface ProducaoItem {
 
 export default function DiarioProducao() {
   const { user } = useAuth();
+  const { fichas: fichasTecnicas, isLoading: fichasLoading } = useData();
   const [date, setDate] = useState<Date>(new Date());
-  const [producoes, setProducoes] = useState<ProducaoItem[]>([
-    { id: "1", produto: "(IT) BROWNIE C", quantidade: 24, unidade: "fatias", responsavel: "João", hora: "09:00", status: "Concluído" },
-    { id: "2", produto: "(IT) PANACOTA", quantidade: 15, unidade: "porções", responsavel: "Maria", hora: "10:30", status: "Em Produção" },
-  ]);
+  
+  // Buscar produções do backend
+  const { data: producoesData = [], isLoading: producoesLoading, refetch: refetchProducoes } = trpc.diarioProducao.list.useQuery({});
+  
+  // Mutations
+  const createProducaoMutation = trpc.diarioProducao.create.useMutation({
+    onSuccess: () => {
+      refetchProducoes();
+      toast.success("Produção adicionada ao diário.");
+    },
+    onError: (error) => {
+      toast.error("Erro ao adicionar produção: " + error.message);
+    }
+  });
+
+  const updateProducaoMutation = trpc.diarioProducao.update.useMutation({
+    onSuccess: () => {
+      refetchProducoes();
+      toast.success("Status atualizado.");
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar status: " + error.message);
+    }
+  });
+
+  const deleteProducaoMutation = trpc.diarioProducao.delete.useMutation({
+    onSuccess: () => {
+      refetchProducoes();
+      toast.success("Item removido.");
+    },
+    onError: (error) => {
+      toast.error("Erro ao remover item: " + error.message);
+    }
+  });
 
   // Estados para a calculadora
   const [selectedFicha, setSelectedFicha] = useState<FichaTecnica | null>(null);
@@ -75,43 +103,73 @@ export default function DiarioProducao() {
     setQtdAlmejada(ficha.rendimentoBase);
   };
 
-  const handleAddProducao = () => {
+  const handleAddProducao = async () => {
     if (!novoProduto || !novaQuantidade || !novoResponsavel) {
       toast.error("Preencha todos os campos para adicionar uma produção.");
       return;
     }
 
-    const ficha = fichasTecnicas.find(f => f.produto === novoProduto);
-    const unidade = ficha ? ficha.unidadeRendimento : "un";
+    const ficha = fichasTecnicas.find((f: FichaTecnica) => f.produto === novoProduto);
+    
+    try {
+      await createProducaoMutation.mutateAsync({
+        fichaTecnicaId: ficha ? parseInt(ficha.id) : 0,
+        produto: novoProduto,
+        quantidadeProduzida: novaQuantidade,
+        responsavel: novoResponsavel,
+        status: "Planejado",
+      });
 
-    const novaProducao: ProducaoItem = {
-      id: Date.now().toString(),
-      produto: novoProduto,
-      quantidade: Number(novaQuantidade),
-      unidade: unidade,
-      responsavel: novoResponsavel,
-      status: "Planejado",
-      hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setProducoes([...producoes, novaProducao]);
-    setNovoProduto("");
-    setNovaQuantidade("");
-    setNovoResponsavel("");
-    toast.success("Produção adicionada ao diário.");
+      setNovoProduto("");
+      setNovaQuantidade("");
+      setNovoResponsavel("");
+    } catch (error) {
+      console.error("Erro ao adicionar produção:", error);
+    }
   };
 
-  const handleStatusChange = (id: string, newStatus: ProducaoItem['status']) => {
-    setProducoes(producoes.map(p => p.id === id ? { ...p, status: newStatus } : p));
-    toast.success(`Status atualizado para ${newStatus}`);
+  const handleStatusChange = async (id: string, newStatus: ProducaoItem['status']) => {
+    try {
+      await updateProducaoMutation.mutateAsync({
+        id: parseInt(id),
+        status: newStatus,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setProducoes(producoes.filter(p => p.id !== id));
-    toast.success("Item removido.");
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProducaoMutation.mutateAsync({ id: parseInt(id) });
+    } catch (error) {
+      console.error("Erro ao remover item:", error);
+    }
   };
+
+  // Converter dados do backend para exibição
+  const producoes: ProducaoItem[] = producoesData.map((p: any) => ({
+    id: String(p.id),
+    produto: p.produto,
+    quantidade: parseFloat(p.quantidade) || 0,
+    unidade: p.unidade || "un",
+    responsavel: p.responsavel || "Equipe",
+    hora: p.createdAt ? new Date(p.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "--:--",
+    status: p.status as ProducaoItem['status'],
+  }));
 
   const fatorMultiplicacao = selectedFicha ? qtdAlmejada / selectedFicha.rendimentoBase : 1;
+
+  const isLoading = fichasLoading || producoesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando dados...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -147,7 +205,7 @@ export default function DiarioProducao() {
                       <SelectValue placeholder="Selecione o produto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {fichasTecnicas.map(ficha => (
+                      {fichasTecnicas.map((ficha: FichaTecnica) => (
                         <SelectItem key={ficha.id} value={ficha.produto}>
                           {ficha.produto}
                         </SelectItem>
@@ -174,7 +232,16 @@ export default function DiarioProducao() {
                     />
                   </div>
                 </div>
-                <Button className="w-full" onClick={handleAddProducao}>Confirmar</Button>
+                <Button 
+                  className="w-full" 
+                  onClick={handleAddProducao}
+                  disabled={createProducaoMutation.isPending}
+                >
+                  {createProducaoMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Confirmar
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -204,45 +271,54 @@ export default function DiarioProducao() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {producoes.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{item.hora}</TableCell>
-                        <TableCell className="font-medium">{item.produto}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {item.quantidade} <span className="text-xs text-muted-foreground">{item.unidade}</span>
-                        </TableCell>
-                        <TableCell className="text-sm">{item.responsavel}</TableCell>
-                        <TableCell>
-                          <Select 
-                            value={item.status} 
-                            onValueChange={(val: any) => handleStatusChange(item.id, val)}
-                          >
-                            <SelectTrigger className={`h-8 w-[130px] border-0 
-                              ${item.status === 'Concluído' ? 'bg-success/20 text-success-foreground font-bold' : 
-                                item.status === 'Em Produção' ? 'bg-primary/20 text-primary font-bold' : 
-                                'bg-secondary text-muted-foreground'}
-                            `}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Planejado">Planejado</SelectItem>
-                              <SelectItem value="Em Produção">Em Produção</SelectItem>
-                              <SelectItem value="Concluído">Concluído</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDelete(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                    {producoes.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Nenhuma produção registrada para hoje.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      producoes.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-mono text-sm text-muted-foreground">{item.hora}</TableCell>
+                          <TableCell className="font-medium">{item.produto}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            {item.quantidade} <span className="text-xs text-muted-foreground">{item.unidade}</span>
+                          </TableCell>
+                          <TableCell className="text-sm">{item.responsavel}</TableCell>
+                          <TableCell>
+                            <Select 
+                              value={item.status} 
+                              onValueChange={(val: any) => handleStatusChange(item.id, val)}
+                            >
+                              <SelectTrigger className={`h-8 w-[130px] border-0 
+                                ${item.status === 'Concluído' ? 'bg-success/20 text-success-foreground font-bold' : 
+                                  item.status === 'Em Produção' ? 'bg-primary/20 text-primary font-bold' : 
+                                  'bg-secondary text-muted-foreground'}
+                              `}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Planejado">Planejado</SelectItem>
+                                <SelectItem value="Em Produção">Em Produção</SelectItem>
+                                <SelectItem value="Concluído">Concluído</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deleteProducaoMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -265,13 +341,13 @@ export default function DiarioProducao() {
                   <select 
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onChange={(e) => {
-                      const ficha = fichasTecnicas.find(f => f.id === e.target.value);
+                      const ficha = fichasTecnicas.find((f: FichaTecnica) => f.id === e.target.value);
                       if (ficha) handleCalculate(ficha);
                     }}
                     value={selectedFicha?.id || ""}
                   >
                     <option value="" disabled>Selecione um produto...</option>
-                    {fichasTecnicas.map(ficha => (
+                    {fichasTecnicas.map((ficha: FichaTecnica) => (
                       <option key={ficha.id} value={ficha.id}>{ficha.produto}</option>
                     ))}
                   </select>
@@ -308,7 +384,7 @@ export default function DiarioProducao() {
                       <div className="rounded-md border border-border overflow-hidden max-h-[300px] overflow-y-auto">
                         <Table>
                           <TableBody>
-                            {selectedFicha.componentes.map((comp, idx) => (
+                            {selectedFicha.componentes.map((comp: { nome: string; quantidade: number; unidade: string }, idx: number) => (
                               <TableRow key={idx} className="text-xs hover:bg-secondary/20">
                                 <TableCell className="font-medium py-2">{comp.nome}</TableCell>
                                 <TableCell className="text-right font-mono font-bold py-2 text-primary">
