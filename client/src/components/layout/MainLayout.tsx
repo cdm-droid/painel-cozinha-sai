@@ -170,6 +170,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <div className="text-sm text-muted-foreground hidden sm:block">
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 sm:hidden"
+              onClick={logout}
+            >
+              <LogOut size={20} />
+            </Button>
           </div>
         </header>
 
