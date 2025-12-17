@@ -61,11 +61,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
         )}
       >
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-primary-foreground font-bold font-display">
-              S
+          <div className="flex items-center gap-3">
+            <img src="/logo-sai.webp" alt="Saí Burguer" className="w-10 h-10 object-contain" />
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-lg tracking-tight leading-tight">SAÍ</span>
+              <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-widest">Cozinha</span>
             </div>
-            <span className="font-display font-bold text-xl tracking-tight">COZINHA SAÍ</span>
           </div>
           <button 
             className="ml-auto lg:hidden text-sidebar-foreground/70 hover:text-sidebar-foreground"

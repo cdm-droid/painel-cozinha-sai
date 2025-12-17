@@ -17,70 +17,106 @@ import {
   Download, 
   Package,
   Plus,
-  MoreHorizontal,
   Save,
   AlertTriangle,
-  ListFilter
+  ListFilter,
+  Loader2
 } from "lucide-react";
-import { useData } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function EstoqueGeral() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [contagemFilter, setContagemFilter] = useState<'todos' | 'critico' | 'geral'>('todos');
-  const { insumos, updateInsumo } = useData();
   const { isOperacional } = useAuth();
   
   // Estado para armazenar contagens temporárias (apenas visual)
-  const [contagens, setContagens] = useState<Record<string, string>>({});
+  const [contagens, setContagens] = useState<Record<number, string>>({});
 
-  const handleContagemChange = (id: string, value: string) => {
+  // Buscar insumos do backend
+  const { data: insumos = [], isLoading, refetch } = trpc.insumos.list.useQuery({
+    ativo: isOperacional ? true : undefined,
+    search: searchTerm || undefined,
+  });
+
+  // Buscar categorias
+  const { data: categories = [] } = trpc.insumos.categorias.useQuery();
+
+  // Mutation para atualizar insumo
+  const updateInsumoMutation = trpc.insumos.update.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Insumo atualizado com sucesso!");
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar insumo: " + error.message);
+    }
+  });
+
+  // Mutation para atualizar estoque (contagem)
+  const updateEstoqueMutation = trpc.insumos.updateEstoque.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Contagem salva com sucesso!");
+    },
+    onError: (error) => {
+      toast.error("Erro ao salvar contagem: " + error.message);
+    }
+  });
+
+  const handleContagemChange = (id: number, value: string) => {
     setContagens(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSalvarContagem = () => {
-    toast.success("Contagem de estoque salva com sucesso!");
+  const handleSalvarContagem = async () => {
+    const contagensParaSalvar = Object.entries(contagens).filter(([_, value]) => value !== "");
+    
+    if (contagensParaSalvar.length === 0) {
+      toast.warning("Nenhuma contagem para salvar.");
+      return;
+    }
+
+    for (const [id, quantidade] of contagensParaSalvar) {
+      await updateEstoqueMutation.mutateAsync({
+        id: parseInt(id),
+        quantidade,
+        visao: contagemFilter,
+      });
+    }
+
     setContagens({});
   };
 
-  const toggleItemAtivo = (id: string) => {
-    const item = insumos.find(i => i.id === id);
-    if (item) {
-      updateInsumo({ ...item, ativo: !item.ativo });
-      toast.success("Status do item atualizado.");
-    }
+  const toggleItemAtivo = (id: number, ativo: boolean) => {
+    updateInsumoMutation.mutate({ id, ativo: !ativo });
   };
-  
-  // Obter categorias únicas
-  const categories = Array.from(new Set(insumos.map(item => item.categoria)));
 
   // Filtrar itens
   const filteredItems = insumos.filter(item => {
-    // Filtro de busca
-    const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          item.id.includes(searchTerm);
-    
     // Filtro de categoria
     const matchesCategory = categoryFilter ? item.categoria === categoryFilter : true;
     
     // Filtro de tipo de contagem (apenas para operacional)
     let matchesContagem = true;
     if (isOperacional) {
-      // Operacional só vê itens ativos
-      if (!item.ativo) return false;
-
       if (contagemFilter === 'critico') {
         matchesContagem = item.status === 'Crítico' || item.status === 'Baixo';
-      } else if (contagemFilter === 'geral') {
-        // Geral inclui tudo que está ativo
-        matchesContagem = true;
       }
     }
 
-    return matchesSearch && matchesCategory && matchesContagem;
+    return matchesCategory && matchesContagem;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Carregando estoque...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -103,8 +139,16 @@ export default function EstoqueGeral() {
             </Button>
           )}
           {isOperacional ? (
-            <Button className="gap-2" onClick={handleSalvarContagem}>
-              <Save size={16} />
+            <Button 
+              className="gap-2" 
+              onClick={handleSalvarContagem}
+              disabled={updateEstoqueMutation.isPending}
+            >
+              {updateEstoqueMutation.isPending ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
               Salvar Contagem
             </Button>
           ) : (
@@ -192,7 +236,7 @@ export default function EstoqueGeral() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Buscar por nome ou ID..."
+                  placeholder="Buscar por nome ou código..."
                   className="pl-9 bg-secondary/50 border-border"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -208,25 +252,22 @@ export default function EstoqueGeral() {
               <Table>
                 <TableHeader className="bg-secondary/50">
                   <TableRow>
-                    {!isOperacional && <TableHead className="w-[80px] font-bold">ID</TableHead>}
+                    {!isOperacional && <TableHead className="w-[80px] font-bold">Código</TableHead>}
                     <TableHead className="font-bold">Produto</TableHead>
                     <TableHead className="font-bold">Categoria</TableHead>
                     
                     {isOperacional ? (
-                      // Cabeçalho Operacional
                       <>
                         <TableHead className="text-right font-bold w-[150px]">Contagem Atual</TableHead>
                         <TableHead className="text-left font-bold w-[80px]">Unid.</TableHead>
                       </>
                     ) : (
-                      // Cabeçalho Gerencial
                       <>
                         <TableHead className="text-right font-bold">Estoque</TableHead>
                         <TableHead className="text-right font-bold">Unid.</TableHead>
                         <TableHead className="text-right font-bold">Custo Unit.</TableHead>
                         <TableHead className="text-center font-bold">Status</TableHead>
                         <TableHead className="text-center font-bold">Ativo p/ Contagem</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
                       </>
                     )}
                   </TableRow>
@@ -236,7 +277,7 @@ export default function EstoqueGeral() {
                     filteredItems.map((item) => (
                       <TableRow key={item.id} className="hover:bg-secondary/30 transition-colors group">
                         {!isOperacional && (
-                          <TableCell className="font-mono text-xs text-muted-foreground">{item.id}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{item.codigo}</TableCell>
                         )}
                         <TableCell className="font-medium">
                           {item.nome}
@@ -247,7 +288,6 @@ export default function EstoqueGeral() {
                         <TableCell className="text-muted-foreground text-sm">{item.categoria}</TableCell>
                         
                         {isOperacional ? (
-                          // Linha Operacional
                           <>
                             <TableCell className="text-right">
                               <Input 
@@ -261,25 +301,24 @@ export default function EstoqueGeral() {
                             <TableCell className="text-left text-muted-foreground text-sm">{item.unidade}</TableCell>
                           </>
                         ) : (
-                          // Linha Gerencial
                           <>
                             <TableCell className="text-right font-mono font-bold">
                               {item.estoqueAtual}
                             </TableCell>
                             <TableCell className="text-right text-muted-foreground text-sm">{item.unidade}</TableCell>
                             <TableCell className="text-right font-mono text-sm">
-                              R$ {item.custoUnitario.toFixed(2)}
+                              R$ {parseFloat(item.custoUnitario).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge 
                                 variant="outline" 
-                                className={`
-                                  ${item.status === 'Crítico' 
-                                    ? 'bg-destructive/10 text-destructive border-destructive/20' 
+                                className={
+                                  item.status === 'Crítico' 
+                                    ? 'bg-destructive/10 text-destructive border-destructive/30' 
                                     : item.status === 'Baixo'
-                                      ? 'bg-warning/10 text-warning-foreground border-warning/20'
-                                      : 'bg-success/10 text-success-foreground border-success/20'}
-                                `}
+                                    ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30'
+                                    : 'bg-green-500/10 text-green-600 border-green-500/30'
+                                }
                               >
                                 {item.status}
                               </Badge>
@@ -287,13 +326,8 @@ export default function EstoqueGeral() {
                             <TableCell className="text-center">
                               <Switch 
                                 checked={item.ativo}
-                                onCheckedChange={() => toggleItemAtivo(item.id)}
+                                onCheckedChange={() => toggleItemAtivo(item.id, item.ativo)}
                               />
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
                             </TableCell>
                           </>
                         )}
@@ -301,11 +335,8 @@ export default function EstoqueGeral() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={isOperacional ? 4 : 9} className="h-32 text-center text-muted-foreground">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <Package className="h-8 w-8 opacity-20" />
-                          <p>Nenhum insumo encontrado com os filtros atuais.</p>
-                        </div>
+                      <TableCell colSpan={isOperacional ? 4 : 8} className="h-24 text-center text-muted-foreground">
+                        Nenhum item encontrado.
                       </TableCell>
                     </TableRow>
                   )}

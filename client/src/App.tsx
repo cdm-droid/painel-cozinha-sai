@@ -28,7 +28,6 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   if (!isAuthenticated) return null;
   return <Component {...rest} />;
 }
-
 function Router() {
   const { isAuthenticated } = useAuth();
 

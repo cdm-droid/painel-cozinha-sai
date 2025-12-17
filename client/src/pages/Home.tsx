@@ -7,7 +7,8 @@ import {
   Package, 
   ChefHat, 
   TrendingUp,
-  Clock
+  Clock,
+  ClipboardList
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -190,4 +191,3 @@ export default function Home() {
   );
 }
 
-import { ClipboardList } from "lucide-react";

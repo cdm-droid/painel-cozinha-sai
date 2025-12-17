@@ -25,12 +25,14 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md industrial-card border-t-4 border-t-primary">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 bg-primary rounded flex items-center justify-center text-primary-foreground mb-2">
-            <ChefHat size={24} />
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto">
+            <img src="/logo-sai.webp" alt="Saí Burguer" className="w-24 h-24 object-contain mx-auto" />
           </div>
-          <CardTitle className="text-2xl font-display">Cozinha Saí</CardTitle>
-          <CardDescription>Sistema de Gestão de Produção e Estoque</CardDescription>
+          <div>
+            <CardTitle className="text-2xl font-display">Painel da Cozinha</CardTitle>
+            <CardDescription className="mt-1">Sistema de Gestão de Produção e Estoque</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
