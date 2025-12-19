@@ -53,9 +53,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { 
       section: "Estoque e Contagem", 
       items: [
+        { id: 'preparo', label: 'Preparo', icon: ChefHat, href: '/preparo', sub: 'Itens de produção', highlight: true },
         { id: 'contagem-sensivel', label: 'Estoque Sensível', icon: ClipboardCheck, href: '/contagem-diaria' },
-        { id: 'estoque-geral', label: 'Estoque Geral', icon: Layers, href: '/estoque-geral' },
-        { id: 'estoque-critico', label: 'Insumos Críticos', icon: AlertTriangle, href: '/estoque-critico' },
+        { id: 'estoque-insumos', label: 'Estoque de Insumos', icon: Layers, href: '/estoque-geral' },
       ]
     },
     { 
@@ -185,8 +185,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <item.icon size={18} className={isActive ? 'text-white' : 'text-primary/70 group-hover:text-primary'} />
-                      <span className="text-sm font-bold tracking-tight">{item.label}</span>
+                      <item.icon size={18} className={cn(
+                        isActive ? 'text-white' : 'text-primary/70 group-hover:text-primary',
+                        (item as any).highlight && !isActive && 'text-amber-500'
+                      )} />
+                      <span className={cn(
+                        "text-sm font-bold tracking-tight",
+                        (item as any).highlight && !isActive && 'text-amber-400'
+                      )}>{item.label}</span>
+                      {(item as any).highlight && !isActive && (
+                        <span className="ml-auto px-1.5 py-0.5 text-[8px] font-black bg-amber-500 text-black rounded uppercase">Novo</span>
+                      )}
                     </div>
                     {item.sub && (
                       <span className={cn(

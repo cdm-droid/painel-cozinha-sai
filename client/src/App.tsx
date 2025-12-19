@@ -15,6 +15,7 @@ import Perdas from "./pages/Perdas";
 import ContagemDiaria from "./pages/ContagemDiaria";
 import Calculadora from "./pages/Calculadora";
 import Deveres from "./pages/Deveres";
+import Preparo from "./pages/Preparo";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 
@@ -56,6 +57,7 @@ function Router() {
         <Route path="/contagem-diaria" component={ContagemDiaria} />
         <Route path="/calculadora" component={Calculadora} />
         <Route path="/deveres" component={Deveres} />
+        <Route path="/preparo" component={Preparo} />
         {/* Rotas placeholder para funcionalidades futuras */}
         <Route path="/cmv" component={() => <PlaceholderPage title="CMV" subtitle="Custo de Mercadoria Vendida" />} />
         <Route path="/historico-movimentacao" component={() => <PlaceholderPage title="Histórico" subtitle="Movimentações de Estoque" />} />

@@ -72,3 +72,9 @@
   - [x] Criar tabela de audit_logs
   - [x] Criar tabela de deveres e deveres_concluidos
   - [x] APIs de auditoria e deveres
+
+## Concluído - Reorganização Menu Estoque
+- [x] Substituir "Insumos Críticos" por "Preparo" com destaque (badge "Novo")
+- [x] Renomear "Estoque Geral" para "Estoque de Insumos"
+- [x] Garantir Estoque Sensível busca do mesmo banco de insumos
+- [x] Criar página de Preparo com filtros de categorias de produção
