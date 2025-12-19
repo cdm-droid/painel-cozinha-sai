@@ -1,5 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
   AlertTriangle, 
   Package, 
@@ -8,12 +6,59 @@ import {
   Clock,
   ClipboardList,
   Loader2,
-  FileText
+  FileText,
+  Timer,
+  CheckCircle2,
+  BarChart3,
+  TrendingUp,
+  ArrowUpRight,
+  Calculator,
+  ListChecks
 } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+
+// Componente de Card de Estatística com design industrial
+function StatCard({ 
+  title, 
+  value, 
+  subtitle, 
+  variant = "primary", 
+  icon: Icon 
+}: { 
+  title: string; 
+  value: string | number; 
+  subtitle?: string; 
+  variant?: "primary" | "warning" | "destructive" | "success"; 
+  icon: any;
+}) {
+  const colors = {
+    primary: 'border-l-primary bg-primary/5 text-primary',
+    warning: 'border-l-amber-500 bg-amber-500/5 text-amber-600',
+    destructive: 'border-l-rose-500 bg-rose-500/5 text-rose-600',
+    success: 'border-l-emerald-500 bg-emerald-500/5 text-emerald-600'
+  };
+
+  return (
+    <div className={cn(
+      "bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm border-l-[6px] transition-all hover:shadow-md",
+      colors[variant]
+    )}>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+        <Icon size={20} />
+      </div>
+      <h4 className="text-4xl font-black tracking-tighter text-gray-800">{value}</h4>
+      {subtitle && <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">{subtitle}</p>}
+    </div>
+  );
+}
 
 export default function Home() {
+  const { isOperacional } = useAuth();
+  
   // Buscar estatísticas do dashboard
   const { data: stats, isLoading: statsLoading } = trpc.dashboard.stats.useQuery();
   
@@ -27,9 +72,9 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">Carregando dashboard...</span>
+      <div className="min-h-[400px] flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="font-black uppercase tracking-[0.3em] text-xs text-gray-400">Sincronizando...</p>
       </div>
     );
   }
@@ -37,159 +82,282 @@ export default function Home() {
   // Calcular total de itens em alerta (crítico + baixo)
   const totalAlertas = (stats?.insumosCriticos || 0) + (stats?.insumosBaixos || 0);
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground font-display">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Visão geral da operação da cozinha hoje.</p>
+  // Dashboard Operador
+  if (isOperacional) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-6">
+          <div>
+            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Painel Operacional</h2>
+            <h1 className="text-3xl font-black tracking-tighter uppercase leading-tight text-[#1A1A1A]">
+              Bom dia, Operador
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/diario-producao">
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                <ChefHat size={16} /> Nova Produção
+              </button>
+            </Link>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Link href="/diario-producao">
-            <Button className="gap-2">
-              <ClipboardList size={16} />
-              Novo Diário
-            </Button>
+
+        {/* KPIs Operacionais */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            title="Alertas" 
+            value={totalAlertas} 
+            subtitle={`${stats?.insumosCriticos || 0} críticos`}
+            variant="destructive" 
+            icon={AlertTriangle} 
+          />
+          <StatCard 
+            title="Produções Hoje" 
+            value={stats?.producoesHoje || 0} 
+            subtitle="Registradas"
+            variant="success" 
+            icon={ChefHat} 
+          />
+          <StatCard 
+            title="Perdas Hoje" 
+            value={stats?.perdasHoje || 0} 
+            subtitle={`R$ ${Number(stats?.custoPerdasHoje || 0).toFixed(2)}`}
+            variant="warning" 
+            icon={Trash2} 
+          />
+          <StatCard 
+            title="Fichas" 
+            value={stats?.totalFichas || 0} 
+            subtitle="Disponíveis"
+            variant="primary" 
+            icon={FileText} 
+          />
+        </div>
+
+        {/* Ações Rápidas */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/deveres">
+            <button className="w-full bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all text-left group">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <ListChecks className="text-primary" size={24} />
+              </div>
+              <h3 className="font-black uppercase text-sm text-gray-800">Deveres</h3>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Checklist do turno</p>
+            </button>
+          </Link>
+          <Link href="/contagem-diaria">
+            <button className="w-full bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all text-left group">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
+                <ClipboardList className="text-amber-500" size={24} />
+              </div>
+              <h3 className="font-black uppercase text-sm text-gray-800">Contagem</h3>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Estoque sensível</p>
+            </button>
+          </Link>
+          <Link href="/calculadora">
+            <button className="w-full bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all text-left group">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
+                <Calculator className="text-emerald-500" size={24} />
+              </div>
+              <h3 className="font-black uppercase text-sm text-gray-800">Calculadora</h3>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Escalonar preparos</p>
+            </button>
+          </Link>
+          <Link href="/perdas">
+            <button className="w-full bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all text-left group">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center mb-4 group-hover:bg-rose-500/20 transition-colors">
+                <Trash2 className="text-rose-500" size={24} />
+              </div>
+              <h3 className="font-black uppercase text-sm text-gray-800">Perdas</h3>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Registrar perda</p>
+            </button>
           </Link>
         </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="industrial-card border-l-4 border-l-warning">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Estoque Crítico
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono">{totalAlertas}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats?.insumosCriticos || 0} críticos, {stats?.insumosBaixos || 0} baixos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="industrial-card border-l-4 border-l-primary">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Total Insumos
-            </CardTitle>
-            <Package className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono">{stats?.totalInsumos || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats?.insumosAtivos || 0} ativos no sistema
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="industrial-card border-l-4 border-l-success">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Produções Hoje
-            </CardTitle>
-            <ChefHat className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono">{stats?.producoesHoje || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Registradas no diário
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="industrial-card border-l-4 border-l-destructive">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Perdas Hoje
-            </CardTitle>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-mono">{stats?.perdasHoje || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              R$ {Number(stats?.custoPerdasHoje || 0).toFixed(2)} em custos
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Alertas de Estoque */}
-        <Card className="industrial-card lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-display text-lg flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              Alertas de Estoque
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {alertas.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                  <p>Nenhum alerta de estoque no momento.</p>
-                  <p className="text-sm">Todos os itens estão em níveis adequados.</p>
+        {alertas.length > 0 && (
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                  <AlertTriangle className="text-rose-500" size={20} />
                 </div>
-              ) : (
-                alertas.map((alerta: any) => (
-                  <div key={alerta.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-md border border-border/50">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${alerta.status === 'Crítico' ? 'bg-destructive animate-pulse' : 'bg-warning'}`} />
-                      <div>
-                        <p className="font-medium text-sm">{alerta.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Estoque: <span className="font-mono font-bold">{parseFloat(alerta.estoqueAtual).toFixed(2)}</span> {alerta.unidade}
-                          <span className="mx-1">|</span>
-                          Mínimo: <span className="font-mono">{parseFloat(alerta.estoqueMinimo).toFixed(2)}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        alerta.status === 'Crítico' 
-                          ? 'bg-destructive/10 text-destructive' 
-                          : 'bg-warning/10 text-warning-foreground'
-                      }`}>
-                        {alerta.status}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="mt-4 pt-4 border-t border-border">
+                <div>
+                  <h3 className="font-black uppercase text-sm text-gray-800">Alertas de Estoque</h3>
+                  <p className="text-[10px] text-gray-400">{alertas.length} itens precisam de atenção</p>
+                </div>
+              </div>
               <Link href="/estoque-critico">
-                <Button variant="outline" className="w-full text-xs uppercase tracking-wider">Ver todos os alertas</Button>
+                <button className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1 hover:underline">
+                  Ver todos <ArrowUpRight size={12} />
+                </button>
               </Link>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Produções Recentes e Acesso Rápido */}
-        <Card className="industrial-card">
-          <CardHeader>
-            <CardTitle className="font-display text-lg flex items-center gap-2">
-              <ChefHat className="h-5 w-5 text-primary" />
-              Produções Recentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {producoesRecentes.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Nenhuma produção registrada.</p>
-                </div>
-              ) : (
-                producoesRecentes.slice(0, 4).map((prod: any) => (
-                  <div key={prod.id} className="flex items-center justify-between p-2 bg-secondary/20 rounded-md">
+            <div className="divide-y divide-gray-50">
+              {alertas.slice(0, 5).map((alerta: any) => (
+                <div key={alerta.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      alerta.status === 'Crítico' ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
+                    )} />
                     <div>
-                      <p className="font-medium text-sm">{prod.produto}</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <p className="font-bold text-sm text-gray-800">{alerta.nome}</p>
+                      <p className="text-xs text-gray-400">
+                        {parseFloat(alerta.estoqueAtual).toFixed(1)} {alerta.unidade} / mín: {parseFloat(alerta.estoqueMinimo).toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={cn(
+                    "text-[9px] font-black px-3 py-1 rounded-full uppercase border",
+                    alerta.status === 'Crítico' 
+                      ? 'bg-rose-50 text-rose-500 border-rose-100' 
+                      : 'bg-amber-50 text-amber-600 border-amber-100'
+                  )}>
+                    {alerta.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Dashboard Gestor
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-6">
+        <div>
+          <h2 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-1">Painel Estratégico</h2>
+          <h1 className="text-3xl font-black tracking-tighter uppercase leading-tight text-[#1A1A1A]">
+            Dashboard Gestor
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+        </div>
+      </div>
+
+      {/* KPIs Estratégicos */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard 
+          title="Insumos" 
+          value={stats?.totalInsumos || 0} 
+          subtitle="Ativos no sistema"
+          variant="primary" 
+          icon={Package} 
+        />
+        <StatCard 
+          title="Estoque Crítico" 
+          value={totalAlertas} 
+          subtitle={`${stats?.insumosCriticos || 0} críticos`}
+          variant="destructive" 
+          icon={AlertTriangle} 
+        />
+        <StatCard 
+          title="Produções Hoje" 
+          value={stats?.producoesHoje || 0} 
+          subtitle="Registradas"
+          variant="warning" 
+          icon={Timer} 
+        />
+        <StatCard 
+          title="CMV Estimado" 
+          value="--" 
+          subtitle="Em desenvolvimento"
+          variant="success" 
+          icon={CheckCircle2} 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Alertas de Estoque */}
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                <AlertTriangle className="text-rose-500" size={20} />
+              </div>
+              <div>
+                <h3 className="font-black uppercase text-sm text-gray-800">Alertas de Estoque</h3>
+                <p className="text-[10px] text-gray-400">{alertas.length} itens precisam de atenção</p>
+              </div>
+            </div>
+            <Link href="/estoque-critico">
+              <button className="text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-1 hover:underline">
+                Ver todos <ArrowUpRight size={12} />
+              </button>
+            </Link>
+          </div>
+          {alertas.length === 0 ? (
+            <div className="p-12 text-center">
+              <Package className="w-12 h-12 mx-auto text-gray-200 mb-4" />
+              <p className="font-bold text-gray-400">Nenhum alerta</p>
+              <p className="text-sm text-gray-300">Todos os itens estão em níveis adequados</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {alertas.slice(0, 8).map((alerta: any) => (
+                <div key={alerta.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      alerta.status === 'Crítico' ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
+                    )} />
+                    <div>
+                      <p className="font-bold text-sm text-gray-800">{alerta.nome}</p>
+                      <p className="text-xs text-gray-400">
+                        {parseFloat(alerta.estoqueAtual).toFixed(1)} {alerta.unidade} / mín: {parseFloat(alerta.estoqueMinimo).toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={cn(
+                    "text-[9px] font-black px-3 py-1 rounded-full uppercase border",
+                    alerta.status === 'Crítico' 
+                      ? 'bg-rose-50 text-rose-500 border-rose-100' 
+                      : 'bg-amber-50 text-amber-600 border-amber-100'
+                  )}>
+                    {alerta.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Produções Recentes */}
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <ChefHat className="text-primary" size={20} />
+              </div>
+              <div>
+                <h3 className="font-black uppercase text-sm text-gray-800">Produções Recentes</h3>
+                <p className="text-[10px] text-gray-400">Últimos registros</p>
+              </div>
+            </div>
+          </div>
+          {producoesRecentes.length === 0 ? (
+            <div className="p-8 text-center">
+              <ClipboardList className="w-10 h-10 mx-auto text-gray-200 mb-3" />
+              <p className="text-sm text-gray-400">Nenhuma produção registrada</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {producoesRecentes.slice(0, 5).map((prod: any) => (
+                <div key={prod.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-sm text-gray-800">{prod.produto}</p>
+                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                         <Clock size={10} />
                         {new Date(prod.createdAt).toLocaleString('pt-BR', { 
                           day: '2-digit', 
@@ -200,34 +368,22 @@ export default function Home() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="font-mono font-bold text-sm">{parseFloat(prod.quantidadeProduzida).toFixed(0)}</span>
-                      <span className="text-xs text-muted-foreground ml-1">{prod.unidade || 'un'}</span>
+                      <span className="font-black text-lg text-gray-800">{parseFloat(prod.quantidadeProduzida).toFixed(0)}</span>
+                      <span className="text-xs text-gray-400 ml-1">{prod.unidade || 'un'}</span>
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
-            
-            <div className="mt-6 space-y-3">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Acesso Rápido</h4>
-              <Link href="/fichas-tecnicas">
-                <Button variant="secondary" className="w-full justify-start">
-                  <FileText className="mr-2 h-4 w-4" /> Fichas Técnicas ({stats?.totalFichas || 0})
-                </Button>
-              </Link>
-              <Link href="/estoque-geral">
-                <Button variant="secondary" className="w-full justify-start">
-                  <Package className="mr-2 h-4 w-4" /> Atualizar Estoque
-                </Button>
-              </Link>
-              <Link href="/perdas">
-                <Button variant="secondary" className="w-full justify-start">
-                  <Trash2 className="mr-2 h-4 w-4" /> Registrar Perda
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+          <div className="p-4 border-t border-gray-100">
+            <Link href="/diario-producao">
+              <button className="w-full py-3 bg-gray-50 hover:bg-gray-100 rounded-xl text-[10px] font-black text-gray-500 uppercase tracking-widest transition-colors">
+                Ver Diário Completo
+              </button>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

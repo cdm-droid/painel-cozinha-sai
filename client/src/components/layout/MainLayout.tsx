@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
@@ -10,12 +10,23 @@ import {
   X, 
   Search,
   Bell,
-  Settings,
+  Home,
+  ArrowLeft,
+  ChevronRight,
   AlertTriangle,
   AlertOctagon,
-  LogOut
+  LogOut,
+  Calculator,
+  BookOpen,
+  ListChecks,
+  BarChart3,
+  DollarSign,
+  History,
+  Users,
+  Layers,
+  Timer,
+  Fingerprint
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,173 +35,274 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [navHistory, setNavHistory] = useState<string[]>([]);
   const { logout, user, isOperacional } = useAuth();
 
-  const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { label: "Estoque Crítico", icon: AlertTriangle, href: "/estoque-critico" },
-    { label: "Estoque Geral", icon: Package, href: "/estoque-geral" },
-    { label: "Fichas Técnicas", icon: ChefHat, href: "/fichas-tecnicas" },
-    { label: "Diário de Produção", icon: ClipboardList, href: "/diario-producao" },
-    { label: "Registro de Perdas", icon: AlertOctagon, href: "/perdas" },
-    { label: "Contagem de Estoque", icon: ClipboardCheck, href: "/contagem-diaria" },
+  // Configuração de navegação por perfil
+  const menuConfig = isOperacional ? [
+    { 
+      section: "Rotina Diária", 
+      items: [
+        { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard, href: '/' },
+        { id: 'quadro-status', label: 'Quadro de Produção', icon: ChefHat, href: '/diario-producao', sub: 'Fluxo em tempo real' },
+        { id: 'deveres', label: 'Checklist de Deveres', icon: ListChecks, href: '/deveres', sub: 'Obrigações do turno' },
+      ]
+    },
+    { 
+      section: "Estoque e Contagem", 
+      items: [
+        { id: 'contagem-sensivel', label: 'Estoque Sensível', icon: ClipboardCheck, href: '/contagem-diaria' },
+        { id: 'estoque-geral', label: 'Estoque Geral', icon: Layers, href: '/estoque-geral' },
+        { id: 'estoque-critico', label: 'Insumos Críticos', icon: AlertTriangle, href: '/estoque-critico' },
+      ]
+    },
+    { 
+      section: "Ferramentas de Apoio", 
+      items: [
+        { id: 'calculadora', label: 'Calculadora Saî', icon: Calculator, href: '/calculadora', sub: 'Escalonar preparos' },
+        { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
+        { id: 'perdas', label: 'Registrar Perda', icon: AlertOctagon, href: '/perdas' },
+      ]
+    }
+  ] : [
+    { 
+      section: "Estratégico", 
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: BarChart3, href: '/' },
+        { id: 'cmv', label: 'CMV', icon: DollarSign, href: '/cmv', sub: 'Custo de Mercadoria' },
+      ]
+    },
+    { 
+      section: "Gestão", 
+      items: [
+        { id: 'insumos', label: 'Insumos', icon: Package, href: '/estoque-geral' },
+        { id: 'historico', label: 'Histórico', icon: History, href: '/historico-movimentacao' },
+        { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
+        { id: 'equipe', label: 'Equipe', icon: Users, href: '/equipe' },
+      ]
+    },
+    { 
+      section: "Operacional", 
+      items: [
+        { id: 'producao', label: 'Produção', icon: ChefHat, href: '/diario-producao' },
+        { id: 'contagem', label: 'Contagem Diária', icon: ClipboardCheck, href: '/contagem-diaria' },
+        { id: 'perdas', label: 'Perdas', icon: AlertOctagon, href: '/perdas' },
+      ]
+    },
+    { 
+      section: "Auditoria", 
+      items: [
+        { id: 'auditoria', label: 'Logs de Operação', icon: Fingerprint, href: '/auditoria' },
+      ]
+    }
   ];
 
-  // Filtra itens para nível operacional
-  const filteredNavItems = isOperacional 
-    ? navItems.filter(item => 
-        ["/estoque-critico", "/fichas-tecnicas", "/diario-producao", "/perdas", "/contagem-diaria"].includes(item.href)
-      )
-    : navItems;
+  const currentInfo = useMemo(() => {
+    for (const section of menuConfig) {
+      const item = section.items.find(i => i.href === location);
+      if (item) return { section: section.section, label: item.label };
+    }
+    return { section: 'Sistema', label: 'Dashboard' };
+  }, [location, menuConfig]);
+
+  const navigateTo = (href: string) => {
+    if (href !== location) {
+      setNavHistory(prev => [...prev, location]);
+      setLocation(href);
+      setSidebarOpen(false);
+    }
+  };
+
+  const goBack = () => {
+    if (navHistory.length > 0) {
+      const prev = navHistory[navHistory.length - 1];
+      setNavHistory(prevH => prevH.slice(0, -1));
+      setLocation(prev);
+    }
+  };
+
+  const role = isOperacional ? 'operador' : 'gestor';
 
   return (
-    <div className="min-h-screen bg-background flex overflow-hidden">
+    <div className="min-h-screen bg-[#FDFDFD] flex text-[#2A2A2A] font-sans overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* SIDEBAR (INDUSTRIAL DARK) */}
       <aside 
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border transform transition-transform duration-200 ease-in-out lg:transform-none flex flex-col",
+          "fixed inset-y-0 left-0 z-50 w-72 bg-[#1A1A1A] text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:static flex flex-col shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
+        <div className="h-20 flex items-center px-6 border-b border-white/10 bg-black/20">
           <div className="flex items-center gap-3">
-            <img src="/logo-sai.webp" alt="Saí Burguer" className="w-10 h-10 object-contain" />
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-lg tracking-tight leading-tight">SAÍ</span>
-              <span className="text-[10px] text-sidebar-foreground/70 uppercase tracking-widest">Cozinha</span>
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg",
+              role === 'gestor' ? 'bg-amber-500 shadow-amber-500/30' : 'bg-primary shadow-primary/30'
+            )}>
+              <img src="/logo-sai.webp" alt="Logo" className="w-7 h-7 object-contain brightness-0 invert" />
+            </div>
+            <div>
+              <span className="block font-black text-xl leading-none tracking-tighter uppercase">SAÍ</span>
+              <span className="text-[9px] text-white/40 uppercase tracking-[0.2em] font-bold">
+                {role === 'gestor' ? 'Gestor Terminal' : 'Smart Operation'}
+              </span>
             </div>
           </div>
           <button 
-            className="ml-auto lg:hidden text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            className="ml-auto lg:hidden text-white/70 hover:text-white"
             onClick={() => setSidebarOpen(false)}
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 px-3">
-          <div className="mb-6">
-            <p className="px-3 text-xs font-bold text-sidebar-foreground/50 uppercase tracking-wider mb-2 font-display">
-              Menu Principal
-            </p>
-            <nav className="space-y-1">
-              {filteredNavItems.map((item) => {
+        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-7 custom-scrollbar">
+          {menuConfig.map((section, idx) => (
+            <div key={idx} className="space-y-1">
+              <h3 className="px-4 text-[10px] font-black text-white/30 uppercase tracking-[0.15em] mb-2">
+                {section.section}
+              </h3>
+              {section.items.map((item) => {
                 const isActive = location === item.href;
                 return (
-                  <Link 
-                    key={item.href} 
-                    href={item.href}
+                  <button
+                    key={item.id}
+                    onClick={() => navigateTo(item.href)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                      "w-full group flex flex-col gap-0.5 px-4 py-2.5 rounded-xl transition-all duration-200 text-left",
                       isActive 
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" 
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        ? "bg-primary text-white shadow-md shadow-primary/20" 
+                        : "hover:bg-white/5 text-white/60 hover:text-white"
                     )}
                   >
-                    <item.icon size={18} />
-                    {item.label}
-                  </Link>
+                    <div className="flex items-center gap-3">
+                      <item.icon size={18} className={isActive ? 'text-white' : 'text-primary/70 group-hover:text-primary'} />
+                      <span className="text-sm font-bold tracking-tight">{item.label}</span>
+                    </div>
+                    {item.sub && (
+                      <span className={cn(
+                        "text-[9px] ml-7 opacity-50 font-medium",
+                        isActive ? 'text-white/80' : 'text-white/40'
+                      )}>
+                        {item.sub}
+                      </span>
+                    )}
+                  </button>
                 );
               })}
-            </nav>
-          </div>
+            </div>
+          ))}
+        </nav>
 
-          <div>
-            <p className="px-3 text-xs font-bold text-sidebar-foreground/50 uppercase tracking-wider mb-2 font-display">
-              Sistema
-            </p>
-            <nav className="space-y-1">
-              {!isOperacional && (
-                <Link 
-                  href="/configuracoes"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                >
-                  <Settings size={18} />
-                  Configurações
-                </Link>
-              )}
-              <button 
-                onClick={logout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <LogOut size={18} />
-                Sair
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-accent-foreground">
+        <div className="p-4 border-t border-white/5 bg-black/40">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold">
               {user?.name.substring(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
+              <p className="text-sm font-medium truncate text-white/90">{user?.name}</p>
+              <p className="text-[10px] text-white/40 truncate uppercase tracking-wider">{role}</p>
             </div>
           </div>
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all font-bold text-xs uppercase tracking-wider"
+          >
+            <LogOut size={16} /> Logout
+          </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8">
-          <div className="flex items-center gap-4">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-[#F8F9FA]">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0 z-30">
+          <div className="flex items-center gap-3">
             <button 
-              className="lg:hidden text-foreground/70 hover:text-foreground"
-              onClick={() => setSidebarOpen(true)}
+              onClick={() => setSidebarOpen(true)} 
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-xl text-gray-500"
             >
               <Menu size={24} />
             </button>
-            <div className="hidden md:flex items-center relative max-w-md w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <input 
-                type="text" 
-                placeholder="Buscar insumos, fichas..." 
-                className="pl-9 pr-4 py-2 bg-secondary/50 border-none rounded-md text-sm focus:ring-1 focus:ring-primary w-64 transition-all focus:w-80"
-              />
+            
+            <div className="flex items-center bg-gray-100 p-1 rounded-xl gap-0.5">
+              <button 
+                onClick={() => navigateTo('/')} 
+                className={cn(
+                  "p-2 rounded-lg transition-all active:scale-90",
+                  location === '/' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                )} 
+                title="Dashboard"
+              >
+                <Home size={18} />
+              </button>
+              <div className="w-px h-4 bg-gray-300 mx-0.5" />
+              <button 
+                onClick={goBack} 
+                disabled={navHistory.length === 0} 
+                className="p-2 rounded-lg transition-all text-gray-400 hover:text-gray-600 disabled:opacity-20 active:scale-90" 
+                title="Voltar"
+              >
+                <ArrowLeft size={18} />
+              </button>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-2 ml-2 border-l border-gray-200 pl-4 text-gray-400">
+              <span className="text-[10px] font-black uppercase tracking-widest">{currentInfo.section}</span>
+              <ChevronRight size={12} className="text-gray-300" />
+              <h2 className="text-sm font-bold text-gray-700">{currentInfo.label}</h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-card"></span>
-            </Button>
-            <div className="h-8 w-px bg-border mx-1 hidden sm:block"></div>
-            <div className="text-sm text-muted-foreground hidden sm:block">
-              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <div className="flex items-center gap-3 md:gap-5">
+            {/* Atalho de Calculadora Flutuante */}
+            {isOperacional && (
+              <button 
+                onClick={() => navigateTo('/calculadora')}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-xl transition-all border",
+                  location === '/calculadora' 
+                    ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
+                    : 'bg-primary/5 text-primary border-primary/10 hover:bg-primary/10'
+                )}
+              >
+                <Calculator size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">Calculadora</span>
+              </button>
+            )}
+
+            <div className="hidden md:flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full border border-emerald-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Cozinha Conectada</span>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 sm:hidden"
-              onClick={logout}
-            >
-              <LogOut size={20} />
-            </Button>
+
+            <button className="relative p-2.5 hover:bg-gray-100 rounded-xl text-gray-400 transition-all active:scale-90">
+              <Bell size={20} />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white ring-2 ring-rose-500/20"></span>
+            </button>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-background p-4 lg:p-8">
+        <section className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
-        </main>
-      </div>
+        </section>
+      </main>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+      `}</style>
     </div>
   );
 }

@@ -153,3 +153,52 @@ export const contagensDiarias = mysqlTable("contagens_diarias", {
 
 export type ContagemDiaria = typeof contagensDiarias.$inferSelect;
 export type InsertContagemDiaria = typeof contagensDiarias.$inferInsert;
+
+
+/**
+ * Logs de Auditoria - Registro de todas as ações do sistema
+ */
+export const auditLogs = mysqlTable("audit_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  acao: varchar("acao", { length: 100 }).notNull(),
+  detalhes: text("detalhes"),
+  criticidade: mysqlEnum("criticidade", ["normal", "importante", "critico"]).default("normal").notNull(),
+  usuario: varchar("usuario", { length: 100 }),
+  userId: int("userId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+/**
+ * Checklist de Deveres - Tarefas diárias da operação
+ */
+export const deveres = mysqlTable("deveres", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  secao: mysqlEnum("secao", ["abertura", "durante_operacao", "fechamento"]).notNull(),
+  horario: varchar("horario", { length: 10 }),
+  ordem: int("ordem").default(0),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Dever = typeof deveres.$inferSelect;
+export type InsertDever = typeof deveres.$inferInsert;
+
+/**
+ * Registro de Deveres Concluídos
+ */
+export const deveresConcluidos = mysqlTable("deveres_concluidos", {
+  id: int("id").autoincrement().primaryKey(),
+  deverId: int("deverId").notNull(),
+  dataReferencia: timestamp("dataReferencia").notNull(),
+  concluidoEm: timestamp("concluidoEm").defaultNow().notNull(),
+  responsavel: varchar("responsavel", { length: 100 }),
+  userId: int("userId"),
+});
+
+export type DeverConcluido = typeof deveresConcluidos.$inferSelect;
+export type InsertDeverConcluido = typeof deveresConcluidos.$inferInsert;

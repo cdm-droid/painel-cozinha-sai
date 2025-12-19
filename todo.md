@@ -52,3 +52,23 @@
   - [x] APIs para salvar e listar contagens
   - [x] Visualização do histórico na página
   - [x] Resumo dos últimos 7 dias
+
+## Em Andamento
+- [ ] Refinar fichas técnicas do sistema
+  - [ ] Ler documento original do Google Docs
+  - [ ] Filtrar apenas itens preparados na casa
+  - [ ] Adicionar modo de preparo profissional
+  - [ ] Remover fichas desnecessárias (Coca-cola, etc)
+  - [ ] Atualizar banco de dados
+
+## Concluído - Integração Nova Interface v6.5
+- [x] Integrar novo código React v6.5
+  - [x] Adaptar estrutura de navegação (Gestor/Operador)
+  - [x] Novo MainLayout com design industrial dark
+  - [x] Dashboard diferenciado por perfil
+  - [x] Página Calculadora Saî para escalonar preparos
+  - [x] Página Checklist de Deveres
+  - [x] Vincular ao banco de dados TRPC existente
+  - [x] Criar tabela de audit_logs
+  - [x] Criar tabela de deveres e deveres_concluidos
+  - [x] APIs de auditoria e deveres

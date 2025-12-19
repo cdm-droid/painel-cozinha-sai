@@ -13,6 +13,8 @@ import FichasTecnicas from "./pages/FichasTecnicas";
 import DiarioProducao from "./pages/DiarioProducao";
 import Perdas from "./pages/Perdas";
 import ContagemDiaria from "./pages/ContagemDiaria";
+import Calculadora from "./pages/Calculadora";
+import Deveres from "./pages/Deveres";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 
@@ -29,6 +31,7 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   if (!isAuthenticated) return null;
   return <Component {...rest} />;
 }
+
 function Router() {
   const { isAuthenticated } = useAuth();
 
@@ -51,10 +54,33 @@ function Router() {
         <Route path="/diario-producao" component={DiarioProducao} />
         <Route path="/perdas" component={Perdas} />
         <Route path="/contagem-diaria" component={ContagemDiaria} />
+        <Route path="/calculadora" component={Calculadora} />
+        <Route path="/deveres" component={Deveres} />
+        {/* Rotas placeholder para funcionalidades futuras */}
+        <Route path="/cmv" component={() => <PlaceholderPage title="CMV" subtitle="Custo de Mercadoria Vendida" />} />
+        <Route path="/historico-movimentacao" component={() => <PlaceholderPage title="Histórico" subtitle="Movimentações de Estoque" />} />
+        <Route path="/equipe" component={() => <PlaceholderPage title="Equipe" subtitle="Gestão de Colaboradores" />} />
+        <Route path="/auditoria" component={() => <PlaceholderPage title="Auditoria" subtitle="Logs de Operação" />} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </MainLayout>
+  );
+}
+
+// Componente placeholder para páginas em desenvolvimento
+function PlaceholderPage({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="min-h-[450px] bg-white rounded-[3rem] border border-gray-100 flex flex-col items-center justify-center text-center p-12 shadow-sm">
+      <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] flex items-center justify-center text-gray-300 mb-8 shadow-inner">
+        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      </div>
+      <h3 className="text-2xl font-black tracking-tight uppercase">{title}</h3>
+      <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">{subtitle}</p>
+      <p className="text-sm text-gray-500 mt-4">Em desenvolvimento</p>
+    </div>
   );
 }
 

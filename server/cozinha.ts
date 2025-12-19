@@ -8,12 +8,18 @@ import {
   perdas, 
   diarioProducao,
   contagensDiarias,
+  auditLogs,
+  deveres,
+  deveresConcluidos,
   InsertInsumo,
   InsertFichaTecnica,
   InsertContagemEstoque,
   InsertPerda,
   InsertDiarioProducao,
   InsertContagemDiaria,
+  InsertAuditLog,
+  InsertDever,
+  InsertDeverConcluido,
   ComponenteFicha
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -687,5 +693,178 @@ export const contagensDiariasRouter = router({
       .orderBy(desc(sql`DATE(${contagensDiarias.dataContagem})`));
 
       return result;
+    }),
+});
+
+
+// ============== AUDITORIA ==============
+
+export const auditoriaRouter = router({
+  // Listar logs de auditoria
+  list: publicProcedure
+    .input(z.object({
+      limit: z.number().default(50),
+      criticidade: z.enum(["normal", "importante", "critico"]).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      let query = db.select().from(auditLogs);
+      
+      if (input?.criticidade) {
+        query = query.where(eq(auditLogs.criticidade, input.criticidade)) as typeof query;
+      }
+
+      return await query
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(input?.limit || 50);
+    }),
+
+  // Registrar log de auditoria
+  registrar: publicProcedure
+    .input(z.object({
+      acao: z.string(),
+      detalhes: z.string().optional(),
+      criticidade: z.enum(["normal", "importante", "critico"]).default("normal"),
+      usuario: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const result = await db.insert(auditLogs).values({
+        acao: input.acao,
+        detalhes: input.detalhes,
+        criticidade: input.criticidade,
+        usuario: input.usuario || "Sistema",
+      });
+
+      return { success: true, id: result[0].insertId };
+    }),
+});
+
+// ============== DEVERES ==============
+
+export const deveresRouter = router({
+  // Listar todos os deveres
+  list: publicProcedure
+    .input(z.object({
+      secao: z.enum(["abertura", "durante_operacao", "fechamento"]).optional(),
+      ativo: z.boolean().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      let query = db.select().from(deveres);
+      
+      const conditions = [];
+      if (input?.secao) {
+        conditions.push(eq(deveres.secao, input.secao));
+      }
+      if (input?.ativo !== undefined) {
+        conditions.push(eq(deveres.ativo, input.ativo));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as typeof query;
+      }
+
+      return await query.orderBy(asc(deveres.secao), asc(deveres.ordem));
+    }),
+
+  // Criar dever
+  create: publicProcedure
+    .input(z.object({
+      titulo: z.string(),
+      descricao: z.string().optional(),
+      secao: z.enum(["abertura", "durante_operacao", "fechamento"]),
+      horario: z.string().optional(),
+      ordem: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const result = await db.insert(deveres).values({
+        titulo: input.titulo,
+        descricao: input.descricao,
+        secao: input.secao,
+        horario: input.horario,
+        ordem: input.ordem || 0,
+      });
+
+      return { success: true, id: result[0].insertId };
+    }),
+
+  // Marcar dever como concluído
+  concluir: publicProcedure
+    .input(z.object({
+      deverId: z.number(),
+      responsavel: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const result = await db.insert(deveresConcluidos).values({
+        deverId: input.deverId,
+        dataReferencia: today,
+        responsavel: input.responsavel,
+      });
+
+      return { success: true, id: result[0].insertId };
+    }),
+
+  // Listar deveres concluídos de uma data
+  listConcluidos: publicProcedure
+    .input(z.object({
+      data: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const data = input?.data ? new Date(input.data) : new Date();
+      data.setHours(0, 0, 0, 0);
+      
+      const dataFim = new Date(data);
+      dataFim.setHours(23, 59, 59, 999);
+
+      return await db.select()
+        .from(deveresConcluidos)
+        .where(and(
+          gte(deveresConcluidos.dataReferencia, data),
+          sql`${deveresConcluidos.dataReferencia} <= ${dataFim}`
+        ));
+    }),
+
+  // Desmarcar dever como concluído
+  desfazerConclusao: publicProcedure
+    .input(z.object({
+      deverId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const dataFim = new Date(today);
+      dataFim.setHours(23, 59, 59, 999);
+
+      await db.delete(deveresConcluidos)
+        .where(and(
+          eq(deveresConcluidos.deverId, input.deverId),
+          gte(deveresConcluidos.dataReferencia, today),
+          sql`${deveresConcluidos.dataReferencia} <= ${dataFim}`
+        ));
+
+      return { success: true };
     }),
 });

@@ -29,6 +29,13 @@
       "when": 1765986863746,
       "tag": "0003_mushy_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1766153077853,
+      "tag": "0004_eager_firestar",
+      "breakpoints": true
     }
   ]
 }
