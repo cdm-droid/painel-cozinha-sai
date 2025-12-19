@@ -202,3 +202,33 @@ export const deveresConcluidos = mysqlTable("deveres_concluidos", {
 
 export type DeverConcluido = typeof deveresConcluidos.$inferSelect;
 export type InsertDeverConcluido = typeof deveresConcluidos.$inferInsert;
+
+/**
+ * Lotes de Produção (Kanban de Preparos)
+ * Status: necessario -> em_producao -> pronto -> finalizado
+ */
+export const lotesProducao = mysqlTable("lotes_producao", {
+  id: int("id").autoincrement().primaryKey(),
+  // Referência ao insumo de preparo (categoria Preparo)
+  insumoId: int("insumoId").notNull(),
+  insumoNome: varchar("insumoNome", { length: 255 }).notNull(),
+  insumoUnidade: varchar("insumoUnidade", { length: 50 }).notNull(),
+  // Quantidade a produzir
+  quantidadePlanejada: decimal("quantidadePlanejada", { precision: 10, scale: 3 }).notNull(),
+  quantidadeProduzida: decimal("quantidadeProduzida", { precision: 10, scale: 3 }).default("0"),
+  // Status do lote no Kanban
+  status: mysqlEnum("status", ["necessario", "em_producao", "pronto", "finalizado"]).default("necessario").notNull(),
+  // Responsável e timestamps
+  responsavel: varchar("responsavel", { length: 100 }),
+  userId: int("userId"),
+  // Timestamps de cada etapa
+  criadoEm: timestamp("criadoEm").defaultNow().notNull(),
+  iniciadoEm: timestamp("iniciadoEm"),
+  prontoEm: timestamp("prontoEm"),
+  finalizadoEm: timestamp("finalizadoEm"),
+  // Observações
+  observacao: text("observacao"),
+});
+
+export type LoteProducao = typeof lotesProducao.$inferSelect;
+export type InsertLoteProducao = typeof lotesProducao.$inferInsert;

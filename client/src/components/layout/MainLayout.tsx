@@ -46,7 +46,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       section: "Rotina Diária", 
       items: [
         { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard, href: '/' },
-        { id: 'quadro-status', label: 'Quadro de Produção', icon: ChefHat, href: '/diario-producao', sub: 'Fluxo em tempo real' },
+        { id: 'quadro-status', label: 'Quadro de Produção', icon: ChefHat, href: '/kanban-producao', sub: 'Fluxo em tempo real', highlight: true },
         { id: 'deveres', label: 'Checklist de Deveres', icon: ListChecks, href: '/deveres', sub: 'Obrigações do turno' },
       ]
     },
@@ -86,7 +86,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { 
       section: "Operacional", 
       items: [
-        { id: 'producao', label: 'Produção', icon: ChefHat, href: '/diario-producao' },
+        { id: 'producao', label: 'Quadro de Produção', icon: ChefHat, href: '/kanban-producao' },
+        { id: 'diario', label: 'Diário de Produção', icon: ClipboardList, href: '/diario-producao' },
         { id: 'contagem', label: 'Contagem Diária', icon: ClipboardCheck, href: '/contagem-diaria' },
         { id: 'perdas', label: 'Perdas', icon: AlertOctagon, href: '/perdas' },
       ]

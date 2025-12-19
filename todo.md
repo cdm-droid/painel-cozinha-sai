@@ -81,3 +81,13 @@
 ## Concluído - Vincular Estoque Sensível
 - [x] Identificar códigos dos 8 insumos no banco
 - [x] Atualizar ContagemDiaria com vínculos diretos por código
+
+## Concluído - Kanban Unificado de Produção
+- [x] Criar tabela de lotes de produção no banco
+- [x] APIs TRPC para gerenciar lotes (criar, mover, finalizar)
+- [x] Página Kanban com drag-and-drop
+- [x] Colunas: Necessário → Em Produção → Pronto
+- [x] Botão "Iniciar Produção" nos itens com estoque baixo
+- [x] Atualização automática de estoque ao finalizar
+- [x] Registro automático no Diário de Produção
+- [x] 29 testes automatizados passando

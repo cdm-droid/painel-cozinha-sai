@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { insumosRouter, fichasTecnicasRouter, perdasRouter, diarioProducaoRouter, contagensRouter, dashboardRouter, contagensDiariasRouter, auditoriaRouter, deveresRouter } from "./cozinha";
+import { insumosRouter, fichasTecnicasRouter, perdasRouter, diarioProducaoRouter, contagensRouter, dashboardRouter, contagensDiariasRouter, auditoriaRouter, deveresRouter, lotesProducaoRouter } from "./cozinha";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -28,6 +28,7 @@ export const appRouter = router({
   contagensDiarias: contagensDiariasRouter,
   auditoria: auditoriaRouter,
   deveres: deveresRouter,
+  lotesProducao: lotesProducaoRouter,
 });
 
 export type AppRouter = typeof appRouter;

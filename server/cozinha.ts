@@ -11,6 +11,7 @@ import {
   auditLogs,
   deveres,
   deveresConcluidos,
+  lotesProducao,
   InsertInsumo,
   InsertFichaTecnica,
   InsertContagemEstoque,
@@ -20,6 +21,7 @@ import {
   InsertAuditLog,
   InsertDever,
   InsertDeverConcluido,
+  InsertLoteProducao,
   ComponenteFicha
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -899,6 +901,237 @@ export const deveresRouter = router({
           eq(deveresConcluidos.deverId, input.deverId),
           gte(deveresConcluidos.dataReferencia, today),
           sql`${deveresConcluidos.dataReferencia} <= ${dataFim}`
+        ));
+
+      return { success: true };
+    }),
+});
+
+
+// ============== LOTES DE PRODUÇÃO (KANBAN) ==============
+
+export const lotesProducaoRouter = router({
+  // Listar todos os lotes de produção (ativos)
+  list: publicProcedure
+    .input(z.object({
+      status: z.enum(["necessario", "em_producao", "pronto", "finalizado"]).optional(),
+      incluirFinalizados: z.boolean().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      let query = db.select().from(lotesProducao);
+      
+      const conditions = [];
+      
+      if (input?.status) {
+        conditions.push(eq(lotesProducao.status, input.status));
+      } else if (!input?.incluirFinalizados) {
+        // Por padrão, não mostrar finalizados
+        conditions.push(sql`${lotesProducao.status} != 'finalizado'`);
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as typeof query;
+      }
+
+      return await query.orderBy(desc(lotesProducao.criadoEm));
+    }),
+
+  // Buscar itens de preparo que precisam de produção (estoque baixo/crítico)
+  itensNecessarios: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    // Buscar insumos da categoria Preparo com estoque baixo ou crítico
+    const itens = await db.select()
+      .from(insumos)
+      .where(and(
+        like(insumos.nome, '%(PR)%'),
+        or(
+          eq(insumos.status, 'Baixo'),
+          eq(insumos.status, 'Crítico')
+        )
+      ))
+      .orderBy(asc(insumos.status), asc(insumos.nome));
+
+    return itens;
+  }),
+
+  // Criar novo lote de produção
+  create: publicProcedure
+    .input(z.object({
+      insumoId: z.number(),
+      insumoNome: z.string(),
+      insumoUnidade: z.string(),
+      quantidadePlanejada: z.string(),
+      responsavel: z.string().optional(),
+      observacao: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const result = await db.insert(lotesProducao).values({
+        insumoId: input.insumoId,
+        insumoNome: input.insumoNome,
+        insumoUnidade: input.insumoUnidade,
+        quantidadePlanejada: input.quantidadePlanejada,
+        responsavel: input.responsavel,
+        observacao: input.observacao,
+        status: "necessario",
+      });
+
+      return { success: true, id: result[0].insertId };
+    }),
+
+  // Iniciar produção (mover para em_producao)
+  iniciarProducao: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      responsavel: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.update(lotesProducao)
+        .set({
+          status: "em_producao",
+          responsavel: input.responsavel,
+          iniciadoEm: new Date(),
+        })
+        .where(eq(lotesProducao.id, input.id));
+
+      return { success: true };
+    }),
+
+  // Marcar como pronto
+  marcarPronto: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      quantidadeProduzida: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const updateData: any = {
+        status: "pronto",
+        prontoEm: new Date(),
+      };
+
+      if (input.quantidadeProduzida) {
+        updateData.quantidadeProduzida = input.quantidadeProduzida;
+      }
+
+      await db.update(lotesProducao)
+        .set(updateData)
+        .where(eq(lotesProducao.id, input.id));
+
+      return { success: true };
+    }),
+
+  // Finalizar e atualizar estoque
+  finalizar: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      quantidadeProduzida: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Buscar o lote
+      const lote = await db.select().from(lotesProducao).where(eq(lotesProducao.id, input.id)).limit(1);
+      if (!lote[0]) throw new Error("Lote não encontrado");
+
+      // Atualizar o lote como finalizado
+      await db.update(lotesProducao)
+        .set({
+          status: "finalizado",
+          quantidadeProduzida: input.quantidadeProduzida,
+          finalizadoEm: new Date(),
+        })
+        .where(eq(lotesProducao.id, input.id));
+
+      // Atualizar o estoque do insumo
+      const insumoAtual = await db.select().from(insumos).where(eq(insumos.id, lote[0].insumoId)).limit(1);
+      if (insumoAtual[0]) {
+        const novoEstoque = parseFloat(insumoAtual[0].estoqueAtual) + parseFloat(input.quantidadeProduzida);
+        const estoqueMinimo = parseFloat(insumoAtual[0].estoqueMinimo);
+        
+        // Calcular novo status
+        let novoStatus: "OK" | "Baixo" | "Crítico" = "OK";
+        if (novoEstoque <= estoqueMinimo * 0.5) {
+          novoStatus = "Crítico";
+        } else if (novoEstoque <= estoqueMinimo) {
+          novoStatus = "Baixo";
+        }
+
+        await db.update(insumos)
+          .set({
+            estoqueAtual: novoEstoque.toString(),
+            status: novoStatus,
+          })
+          .where(eq(insumos.id, lote[0].insumoId));
+      }
+
+      // Registrar no diário de produção
+      await db.insert(diarioProducao).values({
+        fichaTecnicaId: null,
+        produto: lote[0].insumoNome,
+        quantidadeProduzida: input.quantidadeProduzida,
+        unidade: lote[0].insumoUnidade,
+        responsavel: lote[0].responsavel || "Operador",
+        statusProducao: "Concluído",
+        observacao: `Lote #${lote[0].id} finalizado via Kanban`,
+      });
+
+      return { success: true };
+    }),
+
+  // Mover lote para outro status (drag and drop)
+  moverStatus: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      novoStatus: z.enum(["necessario", "em_producao", "pronto"]),
+      responsavel: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const updateData: any = {
+        status: input.novoStatus,
+      };
+
+      if (input.novoStatus === "em_producao") {
+        updateData.iniciadoEm = new Date();
+        if (input.responsavel) updateData.responsavel = input.responsavel;
+      } else if (input.novoStatus === "pronto") {
+        updateData.prontoEm = new Date();
+      }
+
+      await db.update(lotesProducao)
+        .set(updateData)
+        .where(eq(lotesProducao.id, input.id));
+
+      return { success: true };
+    }),
+
+  // Excluir lote (apenas se não finalizado)
+  delete: publicProcedure
+    .input(z.number())
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.delete(lotesProducao)
+        .where(and(
+          eq(lotesProducao.id, input),
+          sql`${lotesProducao.status} != 'finalizado'`
         ));
 
       return { success: true };
