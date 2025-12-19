@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, produto, categoria FROM fichas_tecnicas WHERE produto LIKE '%(PR)%' ORDER BY produto LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT id, produto, categoria FROM fichas_tecnicas WHERE produto LIKE '%(PR)%' ORDER BY produto LIMIT 20",
+  "rows": [
+    {
+      "id": "8",
+      "produto": "(PR) BACON CROCANTE",
+      "categoria": "Geral"
+    },
+    {
+      "id": "9",
+      "produto": "(PR) BACON EM CUBOS COM CASTANHA DO PARÁ",
+      "categoria": "Geral"
+    },
+    {
+      "id": "10",
+      "produto": "(PR) BLEND 120G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "11",
+      "produto": "(PR) BLEND 150G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "12",
+      "produto": "(PR) CEBOLA CARAMELIZADA COM RAPADURA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "13",
+      "produto": "(PR) CHUTNEY DE CUPUAÇU CACHAÇA E CEBOLA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "14",
+      "produto": "(PR) COXA/SOBRECOXA DE FRANGO EMPANADAS",
+      "categoria": "Geral"
+    },
+    {
+      "id": "15",
+      "produto": "(PR) COXA/SOBRECOXA FRANGO MAR. MOSTARDA/ALHO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "16",
+      "produto": "(PR) FARINHAS TRIGO E FLOCÃO PARA EMPANAÇÃO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "17",
+      "produto": "(PR) MAIONESE DE ALHO E ORÉGANO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "18",
+      "produto": "(PR) MAIONESE VERDE - COENTRO E LIMÃO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "19",
+      "produto": "(PR) MAIONESE VERMELHA - PÁPRICA E CALABRESA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "20",
+      "produto": "(PR) MOSTARDA DA CASA COM MEL",
+      "categoria": "Geral"
+    },
+    {
+      "id": "21",
+      "produto": "(PR) MOSTARDA HIDRATADA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "22",
+      "produto": "(PR) PICLES DE CEBOLA ROXA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "23",
+      "produto": "(PR) PICLES DE PEPINO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "24",
+      "produto": "(PR) TOMATE TOMATUDO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "25",
+      "produto": "(PR) TOMATES FERMENTADOS",
+      "categoria": "Geral"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tproduto\tcategoria\n8\t(PR) BACON CROCANTE\tGeral\n9\t(PR) BACON EM CUBOS COM CASTANHA DO PARÁ\tGeral\n10\t(PR) BLEND 120G\tGeral\n11\t(PR) BLEND 150G\tGeral\n12\t(PR) CEBOLA CARAMELIZADA COM RAPADURA\tGeral\n13\t(PR) CHUTNEY DE CUPUAÇU CACHAÇA E CEBOLA\tGeral\n14\t(PR) COXA/SOBRECOXA DE FRANGO EMPANADAS\tGeral\n15\t(PR) COXA/SOBRECOXA FRANGO MAR. MOSTARDA/ALHO\tGeral\n16\t(PR) FARINHAS TRIGO E FLOCÃO PARA EMPANAÇÃO\tGeral\n17\t(PR) MAIONESE DE ALHO E ORÉGANO\tGeral\n18\t(PR) MAIONESE VERDE - COENTRO E LIMÃO\tGeral\n19\t(PR) MAIONESE VERMELHA - PÁPRICA E CALABRESA\tGeral\n20\t(PR) MOSTARDA DA CASA COM MEL\tGeral\n21\t(PR) MOSTARDA HIDRATADA\tGeral\n22\t(PR) PICLES DE CEBOLA ROXA\tGeral\n23\t(PR) PICLES DE PEPINO\tGeral\n24\t(PR) TOMATE TOMATUDO\tGeral\n25\t(PR) TOMATES FERMENTADOS\tGeral\n",
+  "stderr": "",
+  "execution_time_ms": 733
+}

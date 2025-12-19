@@ -318,6 +318,42 @@ export const fichasTecnicasRouter = router({
     const result = await db.selectDistinct({ categoria: fichasTecnicas.categoria }).from(fichasTecnicas);
     return result.map(r => r.categoria).filter(Boolean);
   }),
+
+  // Atualizar modo de preparo por nome do produto
+  updateModoPreparo: publicProcedure
+    .input(z.object({
+      produto: z.string(),
+      modoPreparo: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.update(fichasTecnicas)
+        .set({ modoPreparo: input.modoPreparo })
+        .where(eq(fichasTecnicas.produto, input.produto));
+      return { success: true };
+    }),
+
+  // Atualizar modos de preparo em lote
+  updateModosPreparo: publicProcedure
+    .input(z.array(z.object({
+      produto: z.string(),
+      modoPreparo: z.string(),
+    })))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      let updated = 0;
+      for (const item of input) {
+        const result = await db.update(fichasTecnicas)
+          .set({ modoPreparo: item.modoPreparo })
+          .where(eq(fichasTecnicas.produto, item.produto));
+        if (result[0].affectedRows > 0) updated++;
+      }
+      return { success: true, updated };
+    }),
 });
 
 // ============== PERDAS ==============

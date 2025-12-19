@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE fichas_tecnicas SET modoPreparo = '1. Fatie as cebolas roxas em rodelas finas.\n2. Em uma panela, misture vinagre de maçã (250ml), água (125ml), açúcar (30g) e sal (5g). Leve ao fogo até ferver.\n3. Em pote de vidro esterilizado, coloque as cebolas, grãos de pimenta-do-reino e folha de louro.\n4. Despeje a mistura fervente sobre as cebolas, garantindo que fiquem submersas.\n5. Deixe esfriar, tampe e leve à geladeira. Pronto após 24h.\nValidade: 2-3 semanas refrigerado.' WHERE produto = '(PR) Picles de Cebola Roxa'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute UPDATE fichas_tecnicas SET modoPreparo = '1. Fatie as cebolas roxas em rodelas finas.\n2. Em uma panela, misture vinagre de maçã (250ml), água (125ml), açúcar (30g) e sal (5g). Leve ao fogo até ferver.\n3. Em pote de vidro esterilizado, coloque as cebolas, grãos de pimenta-do-reino e folha de louro.\n4. Despeje a mistura fervente sobre as cebolas, garantindo que fiquem submersas.\n5. Deixe esfriar, tampe e leve à geladeira. Pronto após 24h.\nValidade: 2-3 semanas refrigerado.' WHERE produto = '(PR) Picles de Cebola Roxa'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 55
+}

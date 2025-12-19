@@ -1,0 +1,82 @@
+{
+  "query": "SELECT produto, CASE WHEN modoPreparo IS NOT NULL AND modoPreparo != '' THEN 'Sim' ELSE 'Não' END as temModoPreparo FROM fichas_tecnicas WHERE produto LIKE '%(PR)%' ORDER BY produto",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT produto, CASE WHEN modoPreparo IS NOT NULL AND modoPreparo != '' THEN 'Sim' ELSE 'Não' END as temModoPreparo FROM fichas_tecnicas WHERE produto LIKE '%(PR)%' ORDER BY produto",
+  "rows": [
+    {
+      "produto": "(PR) BACON CROCANTE",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) BACON EM CUBOS COM CASTANHA DO PARÁ",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) BLEND 120G",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) BLEND 150G",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) CEBOLA CARAMELIZADA COM RAPADURA",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) CHUTNEY DE CUPUAÇU CACHAÇA E CEBOLA",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) COXA/SOBRECOXA DE FRANGO EMPANADAS",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) COXA/SOBRECOXA FRANGO MAR. MOSTARDA/ALHO",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) FARINHAS TRIGO E FLOCÃO PARA EMPANAÇÃO",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) MAIONESE DE ALHO E ORÉGANO",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) MAIONESE VERDE - COENTRO E LIMÃO",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) MAIONESE VERMELHA - PÁPRICA E CALABRESA",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) MOSTARDA DA CASA COM MEL",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) MOSTARDA HIDRATADA",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) PICLES DE CEBOLA ROXA",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) PICLES DE PEPINO",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) TOMATE TOMATUDO",
+      "temModoPreparo": "Sim"
+    },
+    {
+      "produto": "(PR) TOMATES FERMENTADOS",
+      "temModoPreparo": "Sim"
+    }
+  ],
+  "messages": [],
+  "stdout": "produto\ttemModoPreparo\n(PR) BACON CROCANTE\tSim\n(PR) BACON EM CUBOS COM CASTANHA DO PARÁ\tSim\n(PR) BLEND 120G\tSim\n(PR) BLEND 150G\tSim\n(PR) CEBOLA CARAMELIZADA COM RAPADURA\tSim\n(PR) CHUTNEY DE CUPUAÇU CACHAÇA E CEBOLA\tSim\n(PR) COXA/SOBRECOXA DE FRANGO EMPANADAS\tSim\n(PR) COXA/SOBRECOXA FRANGO MAR. MOSTARDA/ALHO\tSim\n(PR) FARINHAS TRIGO E FLOCÃO PARA EMPANAÇÃO\tSim\n(PR) MAIONESE DE ALHO E ORÉGANO\tSim\n(PR) MAIONESE VERDE - COENTRO E LIMÃO\tSim\n(PR) MAIONESE VERMELHA - PÁPRICA E CALABRESA\tSim\n(PR) MOSTARDA DA CASA COM MEL\tSim\n(PR) MOSTARDA HIDRATADA\tSim\n(PR) PICLES DE CEBOLA ROXA\tSim\n(PR) PICLES DE PEPINO\tSim\n(PR) TOMATE TOMATUDO\tSim\n(PR) TOMATES FERMENTADOS\tSim\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

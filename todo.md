@@ -53,13 +53,12 @@
   - [x] Visualização do histórico na página
   - [x] Resumo dos últimos 7 dias
 
-## Em Andamento
-- [ ] Refinar fichas técnicas do sistema
-  - [ ] Ler documento original do Google Docs
-  - [ ] Filtrar apenas itens preparados na casa
-  - [ ] Adicionar modo de preparo profissional
-  - [ ] Remover fichas desnecessárias (Coca-cola, etc)
-  - [ ] Atualizar banco de dados
+## Concluído - Refinar Fichas Técnicas
+- [x] Refinar fichas técnicas do sistema
+  - [x] Ler documento original do Google Docs
+  - [x] Adicionar modo de preparo profissional para 19 itens de Preparo
+  - [x] Filtrar fichas do painel operacional (apenas categoria Preparo)
+  - [x] Gestor continua vendo todas as fichas para gestão de custos
 
 ## Concluído - Integração Nova Interface v6.5
 - [x] Integrar novo código React v6.5

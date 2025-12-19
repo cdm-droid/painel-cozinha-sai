@@ -69,7 +69,13 @@ export default function FichasTecnicas() {
     }
   };
 
-  const filteredFichas = fichas.filter(ficha => 
+  // Para operacional, mostrar apenas fichas de Preparo (PR) que têm modo de preparo
+  // Para gestor, mostrar todas as fichas
+  const baseFichas = isOperacional 
+    ? fichas.filter(ficha => ficha.produto.startsWith('(PR)'))
+    : fichas;
+
+  const filteredFichas = baseFichas.filter(ficha => 
     ficha.produto.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ficha.id.toLowerCase().includes(searchTerm.toLowerCase())
   );

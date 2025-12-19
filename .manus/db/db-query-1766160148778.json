@@ -1,0 +1,160 @@
+{
+  "query": "SELECT id, produto, categoria FROM fichas_tecnicas WHERE produto NOT LIKE '%(PR)%' ORDER BY produto LIMIT 30",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT id, produto, categoria FROM fichas_tecnicas WHERE produto NOT LIKE '%(PR)%' ORDER BY produto LIMIT 30",
+  "rows": [
+    {
+      "id": "1",
+      "produto": "(IT) BROWNIE COM CREME DE CUPUAÇU",
+      "categoria": "Geral"
+    },
+    {
+      "id": "3",
+      "produto": "(IT) PANACOTA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "4",
+      "produto": "(IT) SUCO DE MARACUJÁ C/ GENGIBRE - 500ML",
+      "categoria": "Geral"
+    },
+    {
+      "id": "5",
+      "produto": "(IT) SUCO DE MARACUJÁ COM GENGIBRE - 300ML",
+      "categoria": "Geral"
+    },
+    {
+      "id": "6",
+      "produto": "(IT) SUCO DE MORANGO C/ MANJERICÃO - 300ML",
+      "categoria": "Geral"
+    },
+    {
+      "id": "7",
+      "produto": "(IT) SUCO DE MORANGO C/ MANJERICÃO - 500ML",
+      "categoria": "Geral"
+    },
+    {
+      "id": "26",
+      "produto": "+ ALFACE",
+      "categoria": "Geral"
+    },
+    {
+      "id": "27",
+      "produto": "+ BACON CROCANTE",
+      "categoria": "Geral"
+    },
+    {
+      "id": "29",
+      "produto": "+ BACON CROCANTE",
+      "categoria": "Geral"
+    },
+    {
+      "id": "28",
+      "produto": "+ BACON CROCANTE",
+      "categoria": "Geral"
+    },
+    {
+      "id": "30",
+      "produto": "+ BLEND 120G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "31",
+      "produto": "+ BLEND 120G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "34",
+      "produto": "+ BLEND 150G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "33",
+      "produto": "+ BLEND 150G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "32",
+      "produto": "+ BLEND 150G",
+      "categoria": "Geral"
+    },
+    {
+      "id": "37",
+      "produto": "+ CEBOLA CARAMELIZADA COM RAPADURA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "35",
+      "produto": "+ CEBOLA CARAMELIZADA COM RAPADURA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "36",
+      "produto": "+ CEBOLA CARAMELIZADA COM RAPADURA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "39",
+      "produto": "+ CEBOLA ROXA EM RODELAS",
+      "categoria": "Geral"
+    },
+    {
+      "id": "38",
+      "produto": "+ CEBOLA ROXA EM RODELAS",
+      "categoria": "Geral"
+    },
+    {
+      "id": "40",
+      "produto": "+ CEBOLA ROXA EM RODELAS",
+      "categoria": "Geral"
+    },
+    {
+      "id": "43",
+      "produto": "+ CUBINHOS DE BACON CARAMELIZADOS E CASTANHA DO PARÁ",
+      "categoria": "Geral"
+    },
+    {
+      "id": "41",
+      "produto": "+ CUBINHOS DE BACON CARAMELIZADOS E CASTANHA DO PARÁ",
+      "categoria": "Geral"
+    },
+    {
+      "id": "42",
+      "produto": "+ CUBINHOS DE BACON CARAMELIZADOS E CASTANHA DO PARÁ",
+      "categoria": "Geral"
+    },
+    {
+      "id": "45",
+      "produto": "+ PICLES DE CEBOLA ROXA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "46",
+      "produto": "+ PICLES DE CEBOLA ROXA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "44",
+      "produto": "+ PICLES DE CEBOLA ROXA",
+      "categoria": "Geral"
+    },
+    {
+      "id": "47",
+      "produto": "+ PICLES PEPINO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "48",
+      "produto": "+ PICLES PEPINO",
+      "categoria": "Geral"
+    },
+    {
+      "id": "49",
+      "produto": "+ PICLES PEPINO",
+      "categoria": "Geral"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tproduto\tcategoria\n1\t(IT) BROWNIE COM CREME DE CUPUAÇU\tGeral\n3\t(IT) PANACOTA\tGeral\n4\t(IT) SUCO DE MARACUJÁ C/ GENGIBRE - 500ML\tGeral\n5\t(IT) SUCO DE MARACUJÁ COM GENGIBRE - 300ML\tGeral\n6\t(IT) SUCO DE MORANGO C/ MANJERICÃO - 300ML\tGeral\n7\t(IT) SUCO DE MORANGO C/ MANJERICÃO - 500ML\tGeral\n26\t+ ALFACE\tGeral\n27\t+ BACON CROCANTE\tGeral\n29\t+ BACON CROCANTE\tGeral\n28\t+ BACON CROCANTE\tGeral\n30\t+ BLEND 120G\tGeral\n31\t+ BLEND 120G\tGeral\n34\t+ BLEND 150G\tGeral\n33\t+ BLEND 150G\tGeral\n32\t+ BLEND 150G\tGeral\n37\t+ CEBOLA CARAMELIZADA COM RAPADURA\tGeral\n35\t+ CEBOLA CARAMELIZADA COM RAPADURA\tGeral\n36\t+ CEBOLA CARAMELIZADA COM RAPADURA\tGeral\n39\t+ CEBOLA ROXA EM RODELAS\tGeral\n38\t+ CEBOLA ROXA EM RODELAS\tGeral\n40\t+ CEBOLA ROXA EM RODELAS\tGeral\n43\t+ CUBINHOS DE BACON CARAMELIZADOS E CASTANHA DO PARÁ\tGeral\n41\t+ CUBINHOS DE BACON CARAMELIZADOS E CASTANHA DO PARÁ\tGeral\n42\t+ CUBINHOS DE BACON CARAMELIZADOS E CASTANHA DO PARÁ\tGeral\n45\t+ PICLES DE CEBOLA ROXA\tGeral\n46\t+ PICLES DE CEBOLA ROXA\tGeral\n44\t+ PICLES DE CEBOLA ROXA\tGeral\n47\t+ PICLES PEPINO\tGeral\n48\t+ PICLES PEPINO\tGeral\n49\t+ PICLES PEPINO\tGeral\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

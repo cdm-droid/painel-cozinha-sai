@@ -1,0 +1,82 @@
+{
+  "query": "SELECT id, produto FROM fichas_tecnicas WHERE produto LIKE '%(PR)%' ORDER BY produto",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT id, produto FROM fichas_tecnicas WHERE produto LIKE '%(PR)%' ORDER BY produto",
+  "rows": [
+    {
+      "id": "8",
+      "produto": "(PR) BACON CROCANTE"
+    },
+    {
+      "id": "9",
+      "produto": "(PR) BACON EM CUBOS COM CASTANHA DO PARÁ"
+    },
+    {
+      "id": "10",
+      "produto": "(PR) BLEND 120G"
+    },
+    {
+      "id": "11",
+      "produto": "(PR) BLEND 150G"
+    },
+    {
+      "id": "12",
+      "produto": "(PR) CEBOLA CARAMELIZADA COM RAPADURA"
+    },
+    {
+      "id": "13",
+      "produto": "(PR) CHUTNEY DE CUPUAÇU CACHAÇA E CEBOLA"
+    },
+    {
+      "id": "14",
+      "produto": "(PR) COXA/SOBRECOXA DE FRANGO EMPANADAS"
+    },
+    {
+      "id": "15",
+      "produto": "(PR) COXA/SOBRECOXA FRANGO MAR. MOSTARDA/ALHO"
+    },
+    {
+      "id": "16",
+      "produto": "(PR) FARINHAS TRIGO E FLOCÃO PARA EMPANAÇÃO"
+    },
+    {
+      "id": "17",
+      "produto": "(PR) MAIONESE DE ALHO E ORÉGANO"
+    },
+    {
+      "id": "18",
+      "produto": "(PR) MAIONESE VERDE - COENTRO E LIMÃO"
+    },
+    {
+      "id": "19",
+      "produto": "(PR) MAIONESE VERMELHA - PÁPRICA E CALABRESA"
+    },
+    {
+      "id": "20",
+      "produto": "(PR) MOSTARDA DA CASA COM MEL"
+    },
+    {
+      "id": "21",
+      "produto": "(PR) MOSTARDA HIDRATADA"
+    },
+    {
+      "id": "22",
+      "produto": "(PR) PICLES DE CEBOLA ROXA"
+    },
+    {
+      "id": "23",
+      "produto": "(PR) PICLES DE PEPINO"
+    },
+    {
+      "id": "24",
+      "produto": "(PR) TOMATE TOMATUDO"
+    },
+    {
+      "id": "25",
+      "produto": "(PR) TOMATES FERMENTADOS"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tproduto\n8\t(PR) BACON CROCANTE\n9\t(PR) BACON EM CUBOS COM CASTANHA DO PARÁ\n10\t(PR) BLEND 120G\n11\t(PR) BLEND 150G\n12\t(PR) CEBOLA CARAMELIZADA COM RAPADURA\n13\t(PR) CHUTNEY DE CUPUAÇU CACHAÇA E CEBOLA\n14\t(PR) COXA/SOBRECOXA DE FRANGO EMPANADAS\n15\t(PR) COXA/SOBRECOXA FRANGO MAR. MOSTARDA/ALHO\n16\t(PR) FARINHAS TRIGO E FLOCÃO PARA EMPANAÇÃO\n17\t(PR) MAIONESE DE ALHO E ORÉGANO\n18\t(PR) MAIONESE VERDE - COENTRO E LIMÃO\n19\t(PR) MAIONESE VERMELHA - PÁPRICA E CALABRESA\n20\t(PR) MOSTARDA DA CASA COM MEL\n21\t(PR) MOSTARDA HIDRATADA\n22\t(PR) PICLES DE CEBOLA ROXA\n23\t(PR) PICLES DE PEPINO\n24\t(PR) TOMATE TOMATUDO\n25\t(PR) TOMATES FERMENTADOS\n",
+  "stderr": "",
+  "execution_time_ms": 48
+}

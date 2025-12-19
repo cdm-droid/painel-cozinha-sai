@@ -1,0 +1,14 @@
+{
+  "query": "SELECT DISTINCT categoria, COUNT(*) as total FROM fichas_tecnicas GROUP BY categoria ORDER BY total DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT DISTINCT categoria, COUNT(*) as total FROM fichas_tecnicas GROUP BY categoria ORDER BY total DESC",
+  "rows": [
+    {
+      "categoria": "Geral",
+      "total": "194"
+    }
+  ],
+  "messages": [],
+  "stdout": "categoria\ttotal\nGeral\t194\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}
