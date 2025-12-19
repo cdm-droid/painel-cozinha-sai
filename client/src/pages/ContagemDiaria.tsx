@@ -25,24 +25,27 @@ import {
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-// Itens de contagem diária com seus estoques mínimos
+// Itens de contagem diária com seus estoques mínimos e códigos do banco
 const ITENS_CONTAGEM_DIARIA = [
-  { nome: "Blend 150g", estoqueMinimo: 40, unidade: "un" },
-  { nome: "Blend 120g", estoqueMinimo: 40, unidade: "un" },
-  { nome: "Batata palito congelada", estoqueMinimo: 8, unidade: "kg" },
-  { nome: "Manteiga", estoqueMinimo: 1, unidade: "kg" },
-  { nome: "Queijo coalho", estoqueMinimo: 1, unidade: "kg" },
-  { nome: "Queijo prato (fatias)", estoqueMinimo: 120, unidade: "fatias" },
-  { nome: "Bacon fatiado cru", estoqueMinimo: 1, unidade: "kg" },
-  { nome: "Óleo (para fritura)", estoqueMinimo: 10, unidade: "L" },
+  { codigo: "84351897", nome: "Blend 150g", nomeDb: "(PR) Blend 150g", estoqueMinimo: 40, unidade: "un" },
+  { codigo: "78910390", nome: "Blend 120g", nomeDb: "(PR) Blend 120g", estoqueMinimo: 40, unidade: "un" },
+  { codigo: "34671701", nome: "Batata palito congelada", nomeDb: "(IN) Batata Pré-frita Congelada", estoqueMinimo: 8, unidade: "kg" },
+  { codigo: "72358735", nome: "Manteiga", nomeDb: "(IN) Manteiga", estoqueMinimo: 1, unidade: "un" },
+  { codigo: "51001027", nome: "Queijo coalho", nomeDb: "(IN) Queijo Coalho", estoqueMinimo: 1, unidade: "kg" },
+  { codigo: "72854117", nome: "Queijo prato (fatias)", nomeDb: "(IN) Queijo prato FATIADO / 2kg 184fatias", estoqueMinimo: 120, unidade: "un" },
+  { codigo: "75455846", nome: "Bacon fatiado cru", nomeDb: "(IN) BACON FATIADO", estoqueMinimo: 1, unidade: "kg" },
+  { codigo: "10633048", nome: "Óleo (para fritura)", nomeDb: "(IN) Óleo de Soja/algodão P/ Fritura", estoqueMinimo: 10, unidade: "L" },
 ];
 
 interface ContagemItem {
+  codigo: string;
   nome: string;
+  nomeDb: string;
   estoqueMinimo: number;
   unidade: string;
   estoqueAtual: string;
   status: "OK" | "Baixo" | "Crítico";
+  insumoId?: number;
 }
 
 export default function ContagemDiaria() {
@@ -75,14 +78,12 @@ export default function ContagemDiaria() {
     }
   });
 
-  // Preencher valores atuais do banco quando carregar
+  // Preencher valores atuais do banco quando carregar - usando código do insumo
   useEffect(() => {
     if (insumos.length > 0) {
       setContagens(prev => prev.map(item => {
-        const insumoDb = insumos.find(i => 
-          i.nome.toLowerCase().includes(item.nome.toLowerCase().split(" ")[0]) ||
-          item.nome.toLowerCase().includes(i.nome.toLowerCase().split(" ")[0])
-        );
+        // Busca direta pelo código do insumo
+        const insumoDb = insumos.find(i => i.codigo === item.codigo);
         
         if (insumoDb) {
           const estoqueAtual = parseFloat(insumoDb.estoqueAtual);
@@ -90,7 +91,8 @@ export default function ContagemDiaria() {
           return {
             ...item,
             estoqueAtual: insumoDb.estoqueAtual,
-            status
+            status,
+            insumoId: insumoDb.id
           };
         }
         return item;
@@ -142,12 +144,10 @@ export default function ContagemDiaria() {
         responsavel: "Equipe",
       });
 
-      // Atualizar insumos no banco
+      // Atualizar insumos no banco - usando código do insumo
       for (const item of itensPreenchidos) {
-        const insumoDb = insumos.find(i => 
-          i.nome.toLowerCase().includes(item.nome.toLowerCase().split(" ")[0]) ||
-          item.nome.toLowerCase().includes(i.nome.toLowerCase().split(" ")[0])
-        );
+        // Busca direta pelo código
+        const insumoDb = insumos.find(i => i.codigo === item.codigo);
         
         if (insumoDb) {
           await updateInsumoMutation.mutateAsync({

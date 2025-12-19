@@ -78,3 +78,7 @@
 - [x] Renomear "Estoque Geral" para "Estoque de Insumos"
 - [x] Garantir Estoque Sensível busca do mesmo banco de insumos
 - [x] Criar página de Preparo com filtros de categorias de produção
+
+## Concluído - Vincular Estoque Sensível
+- [x] Identificar códigos dos 8 insumos no banco
+- [x] Atualizar ContagemDiaria com vínculos diretos por código
