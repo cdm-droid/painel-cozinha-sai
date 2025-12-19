@@ -5,25 +5,17 @@ import {
   Loader2, 
   Package,
   AlertTriangle,
-  Filter,
   ArrowUpDown
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
-// Categorias de preparo - itens que são produzidos na casa
-const CATEGORIAS_PREPARO = [
-  "AÇOUGUE",
-  "MOLHOS E CALDAS", 
-  "VEGETAIS",
-  "SOBREMESAS",
-  "PORÇÕES",
-  "BEBIDAS PREPARADAS"
-];
+// Categoria de preparo - itens produzidos na casa
+const CATEGORIA_PREPARO = "Preparo";
 
 export default function Preparo() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoriaFilter, setCategoriaFilter] = useState<string>("todas");
+  
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [sortBy, setSortBy] = useState<"nome" | "estoque">("nome");
 
@@ -32,13 +24,10 @@ export default function Preparo() {
     ativo: true
   });
 
-  // Filtrar apenas itens de preparo (categorias específicas)
+  // Filtrar apenas itens da categoria "Preparo"
   const itensPreparo = useMemo(() => {
     return insumos.filter(insumo => 
-      CATEGORIAS_PREPARO.some(cat => 
-        insumo.categoria.toUpperCase().includes(cat) ||
-        cat.includes(insumo.categoria.toUpperCase())
-      )
+      insumo.categoria.toLowerCase() === CATEGORIA_PREPARO.toLowerCase()
     );
   }, [insumos]);
 
@@ -52,13 +41,6 @@ export default function Preparo() {
       filtered = filtered.filter(item => 
         item.nome.toLowerCase().includes(term) ||
         item.codigo.toLowerCase().includes(term)
-      );
-    }
-
-    // Filtro de categoria
-    if (categoriaFilter !== "todas") {
-      filtered = filtered.filter(item => 
-        item.categoria.toUpperCase().includes(categoriaFilter.toUpperCase())
       );
     }
 
@@ -77,7 +59,7 @@ export default function Preparo() {
     });
 
     return filtered;
-  }, [itensPreparo, searchTerm, categoriaFilter, statusFilter, sortBy]);
+  }, [itensPreparo, searchTerm, statusFilter, sortBy]);
 
   // Estatísticas
   const stats = useMemo(() => {
@@ -87,11 +69,7 @@ export default function Preparo() {
     return { criticos, baixos, ok, total: itensPreparo.length };
   }, [itensPreparo]);
 
-  // Categorias únicas para o filtro
-  const categoriasUnicas = useMemo(() => {
-    const cats = new Set(itensPreparo.map(i => i.categoria));
-    return Array.from(cats).sort();
-  }, [itensPreparo]);
+
 
   if (isLoading) {
     return (
@@ -166,21 +144,6 @@ export default function Preparo() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
             />
-          </div>
-
-          {/* Filtro de Categoria */}
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-400" />
-            <select
-              value={categoriaFilter}
-              onChange={(e) => setCategoriaFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-            >
-              <option value="todas">Todas categorias</option>
-              {categoriasUnicas.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
           </div>
 
           {/* Filtro de Status */}
