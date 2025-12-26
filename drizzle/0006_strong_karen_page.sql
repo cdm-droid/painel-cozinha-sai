@@ -1,0 +1,1 @@
+ALTER TABLE `insumos` ADD `contagemDiaria` boolean DEFAULT false NOT NULL;

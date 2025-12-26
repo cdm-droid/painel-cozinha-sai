@@ -1,0 +1,50 @@
+{
+  "query": "SELECT codigo, nome, contagemDiaria FROM insumos WHERE contagemDiaria = true",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT codigo, nome, contagemDiaria FROM insumos WHERE contagemDiaria = true",
+  "rows": [
+    {
+      "codigo": "72358735",
+      "nome": "(IN) Manteiga",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "75455846",
+      "nome": "(IN) BACON FATIADO",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "51001027",
+      "nome": "(IN) Queijo Coalho",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "72854117",
+      "nome": "(IN) Queijo prato FATIADO / 2kg 184fatias",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "84351897",
+      "nome": "(PR) Blend 150g",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "34671701",
+      "nome": "(IN) Batata Pré-frita Congelada",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "10633048",
+      "nome": "(IN) Óleo de Soja/algodão P/ Fritura",
+      "contagemDiaria": "1"
+    },
+    {
+      "codigo": "78910390",
+      "nome": "(PR) Blend 120g",
+      "contagemDiaria": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigo\tnome\tcontagemDiaria\n72358735\t(IN) Manteiga\t1\n75455846\t(IN) BACON FATIADO\t1\n51001027\t(IN) Queijo Coalho\t1\n72854117\t(IN) Queijo prato FATIADO / 2kg 184fatias\t1\n84351897\t(PR) Blend 150g\t1\n34671701\t(IN) Batata Pré-frita Congelada\t1\n10633048\t(IN) Óleo de Soja/algodão P/ Fritura\t1\n78910390\t(PR) Blend 120g\t1\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

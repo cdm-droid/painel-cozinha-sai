@@ -35,6 +35,7 @@ export const insumosRouter = router({
       categoria: z.string().optional(),
       status: z.enum(["OK", "Baixo", "Crítico"]).optional(),
       ativo: z.boolean().optional(),
+      contagemDiaria: z.boolean().optional(),
       search: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
@@ -54,6 +55,9 @@ export const insumosRouter = router({
       }
       if (input?.ativo !== undefined) {
         conditions.push(eq(insumos.ativo, input.ativo));
+      }
+      if (input?.contagemDiaria !== undefined) {
+        conditions.push(eq(insumos.contagemDiaria, input.contagemDiaria));
       }
       if (input?.search) {
         conditions.push(
@@ -94,6 +98,7 @@ export const insumosRouter = router({
       estoqueMinimo: z.string().default("0"),
       status: z.enum(["OK", "Baixo", "Crítico"]).default("OK"),
       ativo: z.boolean().default(true),
+      contagemDiaria: z.boolean().default(false),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -116,6 +121,7 @@ export const insumosRouter = router({
       estoqueMinimo: z.string().optional(),
       status: z.enum(["OK", "Baixo", "Crítico"]).optional(),
       ativo: z.boolean().optional(),
+      contagemDiaria: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();

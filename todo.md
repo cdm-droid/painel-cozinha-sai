@@ -91,3 +91,9 @@
 - [x] Atualização automática de estoque ao finalizar
 - [x] Registro automático no Diário de Produção
 - [x] 29 testes automatizados passando
+
+## Concluído - Campo Contagem Diária Dinâmico
+- [x] Adicionar campo contagemDiaria no schema de insumos
+- [x] Atualizar página de Insumos do gestor com checkbox
+- [x] Atualizar Contagem Diária para buscar itens marcados dinamicamente
+- [x] 8 itens originais pré-marcados no banco

@@ -39,6 +39,7 @@ export const insumos = mysqlTable("insumos", {
   estoqueMinimo: decimal("estoqueMinimo", { precision: 10, scale: 3 }).notNull().default("0"),
   status: mysqlEnum("status", ["OK", "Baixo", "Crítico"]).default("OK").notNull(),
   ativo: boolean("ativo").default(true).notNull(),
+  contagemDiaria: boolean("contagemDiaria").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

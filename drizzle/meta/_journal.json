@@ -43,6 +43,13 @@
       "when": 1766162209605,
       "tag": "0005_smooth_gertrude_yorkes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1766791920384,
+      "tag": "0006_strong_karen_page",
+      "breakpoints": true
     }
   ]
 }

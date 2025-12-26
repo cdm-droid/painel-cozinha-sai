@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE insumos SET contagemDiaria = true WHERE codigo IN ('84351897', '78910390', '34671701', '72358735', '51001027', '72854117', '75455846', '10633048')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute UPDATE insumos SET contagemDiaria = true WHERE codigo IN ('84351897', '78910390', '34671701', '72358735', '51001027', '72854117', '75455846', '10633048')",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 70
+}

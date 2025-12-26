@@ -93,6 +93,10 @@ export default function EstoqueGeral() {
     updateInsumoMutation.mutate({ id, ativo: !ativo });
   };
 
+  const toggleContagemDiaria = (id: number, contagemDiaria: boolean) => {
+    updateInsumoMutation.mutate({ id, contagemDiaria: !contagemDiaria });
+  };
+
   // Filtrar itens
   const filteredItems = insumos.filter(item => {
     // Filtro de categoria
@@ -267,7 +271,8 @@ export default function EstoqueGeral() {
                         <TableHead className="text-right font-bold">Unid.</TableHead>
                         <TableHead className="text-right font-bold">Custo Unit.</TableHead>
                         <TableHead className="text-center font-bold">Status</TableHead>
-                        <TableHead className="text-center font-bold">Ativo p/ Contagem</TableHead>
+                        <TableHead className="text-center font-bold">Ativo</TableHead>
+                        <TableHead className="text-center font-bold">Contagem Diária</TableHead>
                       </>
                     )}
                   </TableRow>
@@ -329,13 +334,19 @@ export default function EstoqueGeral() {
                                 onCheckedChange={() => toggleItemAtivo(item.id, item.ativo)}
                               />
                             </TableCell>
+                            <TableCell className="text-center">
+                              <Switch 
+                                checked={item.contagemDiaria || false}
+                                onCheckedChange={() => toggleContagemDiaria(item.id, item.contagemDiaria || false)}
+                              />
+                            </TableCell>
                           </>
                         )}
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={isOperacional ? 4 : 8} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={isOperacional ? 4 : 9} className="h-24 text-center text-muted-foreground">
                         Nenhum item encontrado.
                       </TableCell>
                     </TableRow>
