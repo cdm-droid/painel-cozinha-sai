@@ -42,10 +42,12 @@ import {
   Eye,
   TrendingDown,
   TrendingUp,
+  ChefHat,
+  Layers,
 } from "lucide-react";
 
 export default function EstoqueGestor() {
-  const [activeTab, setActiveTab] = useState("insumos");
+  const [activeTab, setActiveTab] = useState("geral");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoriaFilter, setCategoriaFilter] = useState<string>("todas");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
@@ -63,11 +65,23 @@ export default function EstoqueGestor() {
   const [showHistoricoDetails, setShowHistoricoDetails] = useState(false);
   
   // Queries
-  const { data: insumos = [], refetch: refetchInsumos } = trpc.insumos.list.useQuery({
-    categoria: categoriaFilter !== "todas" ? categoriaFilter : undefined,
-    status: statusFilter !== "todos" ? statusFilter as any : undefined,
-    search: searchTerm || undefined,
+  const { data: todosInsumos = [], refetch: refetchInsumos } = trpc.insumos.list.useQuery({});
+  
+  // Filtrar insumos baseado nos filtros
+  const insumos = todosInsumos.filter(item => {
+    const matchSearch = !searchTerm || 
+      item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategoria = categoriaFilter === "todas" || item.categoria === categoriaFilter;
+    const matchStatus = statusFilter === "todos" || item.status === statusFilter;
+    return matchSearch && matchCategoria && matchStatus;
   });
+  
+  // Insumos de preparo (categoria contém "Preparo" ou "PR")
+  const insumosPreparos = todosInsumos.filter(i => 
+    i.categoria?.toLowerCase().includes("preparo") || 
+    i.codigo?.startsWith("(PR)")
+  );
   
   const { data: insumosSensiveis = [] } = trpc.insumos.list.useQuery({
     contagemDiaria: true,
@@ -88,13 +102,29 @@ export default function EstoqueGestor() {
     },
   });
   
-  // Categorias únicas
-  const categorias = Array.from(new Set(insumos.map(i => i.categoria))).sort();
+  // Categorias únicas (excluindo preparos para a aba insumos)
+  const categorias = Array.from(new Set(todosInsumos.map(i => i.categoria))).sort();
+  
+  // Estatísticas do estoque geral
+  const estatisticasGeral = {
+    total: todosInsumos.length,
+    criticos: todosInsumos.filter(i => i.status === "Crítico").length,
+    baixos: todosInsumos.filter(i => i.status === "Baixo").length,
+    ok: todosInsumos.filter(i => i.status === "OK").length,
+  };
   
   // Estatísticas do estoque sensível
   const sensivelCriticos = insumosSensiveis.filter(i => i.status === "Crítico");
   const sensivelBaixos = insumosSensiveis.filter(i => i.status === "Baixo");
   const sensivelOk = insumosSensiveis.filter(i => i.status === "OK");
+  
+  // Estatísticas dos preparos
+  const estatisticasPreparos = {
+    total: insumosPreparos.length,
+    criticos: insumosPreparos.filter(i => i.status === "Crítico").length,
+    baixos: insumosPreparos.filter(i => i.status === "Baixo").length,
+    ok: insumosPreparos.filter(i => i.status === "OK").length,
+  };
   
   // Agrupar histórico por data
   const historicoAgrupado = historicoContagens.reduce((acc: any, item: any) => {
@@ -157,22 +187,99 @@ export default function EstoqueGestor() {
     }
   };
 
+  // Renderizar tabela de itens
+  const renderTabelaItens = (itens: any[], showCategoria = true) => (
+    <Card>
+      <CardContent className="p-0">
+        <div className="max-h-[600px] overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow>
+                <TableHead className="w-[100px]">Código</TableHead>
+                <TableHead>Nome</TableHead>
+                {showCategoria && <TableHead>Categoria</TableHead>}
+                <TableHead className="text-right w-[120px]">Qtde em Estoque</TableHead>
+                <TableHead className="text-right w-[100px]">Mínimo</TableHead>
+                <TableHead className="w-[80px]">Unid.</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                <TableHead className="w-[80px] text-center">Contagem</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {itens.map((item) => (
+                <TableRow 
+                  key={item.id} 
+                  className="cursor-pointer hover:bg-secondary/30"
+                  onClick={() => handleEdit(item)}
+                >
+                  <TableCell className="font-mono text-xs">{item.codigo}</TableCell>
+                  <TableCell className="font-medium">{item.nome}</TableCell>
+                  {showCategoria && <TableCell className="text-sm text-muted-foreground">{item.categoria}</TableCell>}
+                  <TableCell className="text-right font-mono font-bold text-lg">
+                    {parseFloat(item.estoqueAtual).toFixed(1)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">
+                    {parseFloat(item.estoqueMinimo).toFixed(1)}
+                  </TableCell>
+                  <TableCell className="text-sm">{item.unidade}</TableCell>
+                  <TableCell>{getStatusBadge(item.status)}</TableCell>
+                  <TableCell className="text-center">
+                    {item.contagemDiaria ? (
+                      <CheckCircle className="h-4 w-4 text-green-500 mx-auto" />
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {itens.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={showCategoria ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                    Nenhum item encontrado
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Estoque</h1>
         <p className="text-muted-foreground text-sm">
-          Gestão completa de insumos, estoque sensível e histórico
+          Gestão completa de insumos, preparos, estoque sensível e histórico
         </p>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-secondary/50">
+        <TabsList className="bg-secondary/50 flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="geral" className="gap-2">
+            <Layers className="h-4 w-4" />
+            Estoque Geral
+          </TabsTrigger>
           <TabsTrigger value="insumos" className="gap-2">
             <Package className="h-4 w-4" />
             Insumos
+          </TabsTrigger>
+          <TabsTrigger value="preparos" className="gap-2">
+            <ChefHat className="h-4 w-4" />
+            Preparos
           </TabsTrigger>
           <TabsTrigger value="sensivel" className="gap-2">
             <AlertTriangle className="h-4 w-4" />
@@ -184,8 +291,68 @@ export default function EstoqueGestor() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab Insumos */}
-        <TabsContent value="insumos" className="space-y-4">
+        {/* Tab Estoque Geral */}
+        <TabsContent value="geral" className="space-y-4">
+          {/* Cards de Resumo */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-secondary/30">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
+                    <p className="text-2xl font-bold">{estatisticasGeral.total}</p>
+                  </div>
+                  <Package className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card 
+              className="bg-red-500/10 border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-colors"
+              onClick={() => setStatusFilter("Crítico")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Críticos</p>
+                    <p className="text-2xl font-bold text-red-400">{estatisticasGeral.criticos}</p>
+                  </div>
+                  <XCircle className="h-8 w-8 text-red-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card 
+              className="bg-yellow-500/10 border-yellow-500/20 cursor-pointer hover:bg-yellow-500/20 transition-colors"
+              onClick={() => setStatusFilter("Baixo")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Baixos</p>
+                    <p className="text-2xl font-bold text-yellow-400">{estatisticasGeral.baixos}</p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-yellow-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card 
+              className="bg-green-500/10 border-green-500/20 cursor-pointer hover:bg-green-500/20 transition-colors"
+              onClick={() => setStatusFilter("OK")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">OK</p>
+                    <p className="text-2xl font-bold text-green-400">{estatisticasGeral.ok}</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Filtros em uma linha */}
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-[200px]">
@@ -220,77 +387,129 @@ export default function EstoqueGestor() {
                 <SelectItem value="Crítico">Crítico</SelectItem>
               </SelectContent>
             </Select>
+            {(statusFilter !== "todos" || categoriaFilter !== "todas" || searchTerm) && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => { setStatusFilter("todos"); setCategoriaFilter("todas"); setSearchTerm(""); }}
+              >
+                Limpar filtros
+              </Button>
+            )}
             <Badge variant="secondary" className="ml-auto">
               {insumos.length} itens
             </Badge>
           </div>
 
-          {/* Tabela de Insumos com cabeçalho fixo */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="max-h-[600px] overflow-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow>
-                      <TableHead className="w-[100px]">Código</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead className="text-right w-[120px]">Qtde em Estoque</TableHead>
-                      <TableHead className="text-right w-[100px]">Mínimo</TableHead>
-                      <TableHead className="w-[80px]">Unid.</TableHead>
-                      <TableHead className="w-[100px]">Status</TableHead>
-                      <TableHead className="w-[80px] text-center">Contagem</TableHead>
-                      <TableHead className="w-[60px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {insumos.map((item) => (
-                      <TableRow 
-                        key={item.id} 
-                        className="cursor-pointer hover:bg-secondary/30"
-                        onClick={() => handleEdit(item)}
-                      >
-                        <TableCell className="font-mono text-xs">{item.codigo}</TableCell>
-                        <TableCell className="font-medium">{item.nome}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.categoria}</TableCell>
-                        <TableCell className="text-right font-mono font-bold text-lg">
-                          {parseFloat(item.estoqueAtual).toFixed(1)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-muted-foreground">
-                          {parseFloat(item.estoqueMinimo).toFixed(1)}
-                        </TableCell>
-                        <TableCell className="text-sm">{item.unidade}</TableCell>
-                        <TableCell>{getStatusBadge(item.status)}</TableCell>
-                        <TableCell className="text-center">
-                          {item.contagemDiaria ? (
-                            <CheckCircle className="h-4 w-4 text-green-500 mx-auto" />
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {insumos.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                          Nenhum insumo encontrado
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Tabela de Estoque Geral */}
+          {renderTabelaItens(insumos)}
+        </TabsContent>
+
+        {/* Tab Insumos */}
+        <TabsContent value="insumos" className="space-y-4">
+          {/* Filtros em uma linha */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-secondary/50"
+              />
+            </div>
+            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
+              <SelectTrigger className="w-[180px] bg-secondary/50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas Categorias</SelectItem>
+                {categorias.filter(cat => !cat?.toLowerCase().includes("preparo")).map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px] bg-secondary/50">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="OK">OK</SelectItem>
+                <SelectItem value="Baixo">Baixo</SelectItem>
+                <SelectItem value="Crítico">Crítico</SelectItem>
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary" className="ml-auto">
+              {insumos.filter(i => !i.categoria?.toLowerCase().includes("preparo") && !i.codigo?.startsWith("(PR)")).length} itens
+            </Badge>
+          </div>
+
+          {/* Tabela de Insumos (excluindo preparos) */}
+          {renderTabelaItens(insumos.filter(i => !i.categoria?.toLowerCase().includes("preparo") && !i.codigo?.startsWith("(PR)")))}
+        </TabsContent>
+
+        {/* Tab Preparos */}
+        <TabsContent value="preparos" className="space-y-4">
+          {/* Cards de Resumo dos Preparos */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-secondary/30">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Preparos</p>
+                    <p className="text-2xl font-bold">{estatisticasPreparos.total}</p>
+                  </div>
+                  <ChefHat className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-red-500/10 border-red-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Críticos</p>
+                    <p className="text-2xl font-bold text-red-400">{estatisticasPreparos.criticos}</p>
+                  </div>
+                  <XCircle className="h-8 w-8 text-red-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-yellow-500/10 border-yellow-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Baixos</p>
+                    <p className="text-2xl font-bold text-yellow-400">{estatisticasPreparos.baixos}</p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-yellow-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-green-500/10 border-green-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">OK</p>
+                    <p className="text-2xl font-bold text-green-400">{estatisticasPreparos.ok}</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Itens de preparo são vinculados ao mesmo banco de dados do painel operacional. 
+            Alterações aqui refletem automaticamente no quadro de produção.
+          </p>
+
+          {/* Tabela de Preparos */}
+          {renderTabelaItens(insumosPreparos, false)}
         </TabsContent>
 
         {/* Tab Estoque Sensível */}
@@ -307,7 +526,7 @@ export default function EstoqueGestor() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Total</p>
                     <p className="text-2xl font-bold">{insumosSensiveis.length}</p>
                   </div>
-                  <Package className="h-8 w-8 text-muted-foreground/50" />
+                  <Eye className="h-8 w-8 text-muted-foreground/50" />
                 </div>
               </CardContent>
             </Card>
@@ -358,99 +577,140 @@ export default function EstoqueGestor() {
             </Card>
           </div>
 
+          <p className="text-sm text-muted-foreground">
+            Clique nos quadros acima para ver os detalhes de cada categoria.
+            Itens sensíveis são aqueles marcados para contagem diária.
+          </p>
+
           {/* Lista de itens sensíveis */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Itens de Contagem Diária</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {insumosSensiveis.map((item) => (
-                  <Card 
-                    key={item.id} 
-                    className={`cursor-pointer hover:bg-secondary/50 transition-colors ${
-                      item.status === "Crítico" ? "border-red-500/30" :
-                      item.status === "Baixo" ? "border-yellow-500/30" : "border-green-500/30"
-                    }`}
-                    onClick={() => handleEdit(item)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-sm">{item.nome}</p>
-                          <p className="text-xs text-muted-foreground">{item.categoria}</p>
-                        </div>
-                        {getStatusBadge(item.status)}
-                      </div>
-                      <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-mono">
-                          {parseFloat(item.estoqueAtual).toFixed(1)}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          / {parseFloat(item.estoqueMinimo).toFixed(1)} {item.unidade}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {renderTabelaItens(insumosSensiveis)}
         </TabsContent>
 
         {/* Tab Histórico */}
         <TabsContent value="historico" className="space-y-4">
-          {/* Resumo por data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(historicoAgrupado).slice(0, 10).map(([data, info]: [string, any]) => (
-              <Card 
-                key={data}
-                className="cursor-pointer hover:bg-secondary/50 transition-colors"
-                onClick={() => { setSelectedHistoricoDate(data); setShowHistoricoDetails(true); }}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-medium">{data}</p>
-                    <Badge variant="secondary">{info.items.length} itens</Badge>
+          {/* Cards de resumo do histórico */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-secondary/30">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Contagens</p>
+                    <p className="text-2xl font-bold">{historicoContagens.length}</p>
                   </div>
-                  <div className="flex gap-3">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                      <span className="text-sm">{info.criticos}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span className="text-sm">{info.baixos}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <span className="text-sm">{info.ok}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          
-          {Object.keys(historicoAgrupado).length === 0 && (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                Nenhum histórico de contagem encontrado
+                  <History className="h-8 w-8 text-muted-foreground/50" />
+                </div>
               </CardContent>
             </Card>
-          )}
+            
+            <Card className="bg-red-500/10 border-red-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Críticos</p>
+                    <p className="text-2xl font-bold text-red-400">
+                      {historicoContagens.filter((h: any) => h.status === "Crítico").length}
+                    </p>
+                  </div>
+                  <XCircle className="h-8 w-8 text-red-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-yellow-500/10 border-yellow-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Baixos</p>
+                    <p className="text-2xl font-bold text-yellow-400">
+                      {historicoContagens.filter((h: any) => h.status === "Baixo").length}
+                    </p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-yellow-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-green-500/10 border-green-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">OK</p>
+                    <p className="text-2xl font-bold text-green-400">
+                      {historicoContagens.filter((h: any) => h.status === "OK").length}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-400/50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <p className="text-sm text-muted-foreground">
+            Clique em uma data para ver os detalhes da contagem realizada.
+          </p>
+
+          {/* Lista de datas */}
+          <div className="grid gap-3">
+            {Object.entries(historicoAgrupado)
+              .sort(([a], [b]) => {
+                const dateA = new Date(a.split('/').reverse().join('-'));
+                const dateB = new Date(b.split('/').reverse().join('-'));
+                return dateB.getTime() - dateA.getTime();
+              })
+              .map(([data, info]: [string, any]) => (
+                <Card 
+                  key={data} 
+                  className="cursor-pointer hover:bg-secondary/30 transition-colors"
+                  onClick={() => { setSelectedHistoricoDate(data); setShowHistoricoDetails(true); }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                          <History className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{data}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {info.items.length} itens contados
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
+                          {info.criticos} críticos
+                        </Badge>
+                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                          {info.baixos} baixos
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                          {info.ok} ok
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            {Object.keys(historicoAgrupado).length === 0 && (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  Nenhuma contagem registrada ainda
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* Dialog de Edição de Insumo */}
+      {/* Dialog de Edição */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar Insumo</DialogTitle>
+            <DialogTitle>Editar Item</DialogTitle>
           </DialogHeader>
           {editingItem && (
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label>Nome</Label>
                 <Input
                   value={editingItem.nome}
@@ -458,24 +718,8 @@ export default function EstoqueGestor() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Categoria</Label>
-                  <Input
-                    value={editingItem.categoria}
-                    onChange={(e) => setEditingItem({ ...editingItem, categoria: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Unidade</Label>
-                  <Input
-                    value={editingItem.unidade}
-                    onChange={(e) => setEditingItem({ ...editingItem, unidade: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Qtde em Estoque</Label>
+                <div>
+                  <Label>Estoque Atual</Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -483,7 +727,7 @@ export default function EstoqueGestor() {
                     onChange={(e) => setEditingItem({ ...editingItem, estoqueAtual: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label>Estoque Mínimo</Label>
                   <Input
                     type="number"
@@ -493,14 +737,23 @@ export default function EstoqueGestor() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Custo Unitário (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editingItem.custoUnitario}
-                  onChange={(e) => setEditingItem({ ...editingItem, custoUnitario: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Unidade</Label>
+                  <Input
+                    value={editingItem.unidade}
+                    onChange={(e) => setEditingItem({ ...editingItem, unidade: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Custo Unitário (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editingItem.custoUnitario}
+                    onChange={(e) => setEditingItem({ ...editingItem, custoUnitario: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <Label>Item de Contagem Diária</Label>

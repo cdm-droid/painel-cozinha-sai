@@ -1,71 +1,121 @@
-import { useState } from "react";
-import { ListChecks, Check, Clock, User, ChevronDown, ChevronUp, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { ListChecks, Check, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 interface Dever {
-  id: string;
+  id: number;
   titulo: string;
-  descricao?: string;
-  horario?: string;
-  concluido: boolean;
-  responsavel?: string;
+  descricao: string | null;
+  categoria: string;
+  secao: string;
+  recorrencia: string;
+  diaSemana: number | null;
+  diaMes: number | null;
+  dataEspecifica: Date | null;
+  horario: string | null;
+  ordem: number;
+  ativo: boolean;
+  createdAt: Date;
+}
+
+interface DeverConcluido {
+  id: number;
+  deverId: number;
+  dataReferencia: Date;
+  responsavel: string | null;
 }
 
 interface SecaoDever {
   titulo: string;
-  deveres: Dever[];
+  deveres: (Dever & { concluido: boolean })[];
 }
 
 export default function Deveres() {
   const [expandedSection, setExpandedSection] = useState<string | null>("abertura");
+  const [deveresConcluidosLocal, setDeveresConcluidosLocal] = useState<Set<number>>(new Set());
   
-  // Checklist padrão da operação
-  const [secoes, setSecoes] = useState<SecaoDever[]>([
+  const hoje = new Date().toISOString().split('T')[0];
+  
+  // Buscar deveres do banco de dados para a data de hoje
+  const { data: deveresDB = [], isLoading } = trpc.deveres.listForDate.useQuery({
+    data: hoje,
+  }) as { data: Dever[], isLoading: boolean };
+  
+  // Buscar deveres concluídos do dia
+  const { data: concluidosDB = [], refetch: refetchConcluidos } = trpc.deveres.listConcluidos.useQuery({
+    data: hoje,
+  }) as { data: DeverConcluido[], refetch: () => void };
+  
+  // Mutation para marcar dever como concluído
+  const concluirDever = trpc.deveres.concluir.useMutation({
+    onSuccess: () => {
+      refetchConcluidos();
+    },
+    onError: () => {
+      toast.error("Erro ao salvar conclusão");
+    },
+  });
+  
+  // Mutation para desmarcar dever
+  const desfazerConclusao = trpc.deveres.desfazerConclusao.useMutation({
+    onSuccess: () => {
+      refetchConcluidos();
+    },
+    onError: () => {
+      toast.error("Erro ao desfazer conclusão");
+    },
+  });
+  
+  // Sincronizar deveres concluídos do banco com o estado local
+  useEffect(() => {
+    const concluidos = new Set<number>();
+    concluidosDB.forEach((c: DeverConcluido) => {
+      concluidos.add(c.deverId);
+    });
+    setDeveresConcluidosLocal(concluidos);
+  }, [concluidosDB]);
+  
+  // Agrupar deveres por seção
+  const secoes: SecaoDever[] = [
     {
       titulo: "abertura",
-      deveres: [
-        { id: "1", titulo: "Ligar equipamentos (chapas, fritadeiras, estufas)", horario: "10:00", concluido: false },
-        { id: "2", titulo: "Verificar temperatura das geladeiras", horario: "10:00", concluido: false },
-        { id: "3", titulo: "Conferir estoque sensível (blends, batata, queijos)", horario: "10:15", concluido: false },
-        { id: "4", titulo: "Preparar mise en place (molhos, vegetais)", horario: "10:30", concluido: false },
-        { id: "5", titulo: "Organizar praça de montagem", horario: "10:45", concluido: false },
-      ]
+      deveres: deveresDB
+        .filter(d => d.secao === "abertura")
+        .map(d => ({ ...d, concluido: deveresConcluidosLocal.has(d.id) }))
     },
     {
       titulo: "durante_operacao",
-      deveres: [
-        { id: "6", titulo: "Reabastecer linha de produção conforme demanda", concluido: false },
-        { id: "7", titulo: "Monitorar qualidade dos produtos", concluido: false },
-        { id: "8", titulo: "Registrar perdas imediatamente", concluido: false },
-        { id: "9", titulo: "Manter área limpa e organizada", concluido: false },
-      ]
+      deveres: deveresDB
+        .filter(d => d.secao === "durante_operacao")
+        .map(d => ({ ...d, concluido: deveresConcluidosLocal.has(d.id) }))
     },
     {
       titulo: "fechamento",
-      deveres: [
-        { id: "10", titulo: "Realizar contagem de estoque sensível", horario: "22:00", concluido: false },
-        { id: "11", titulo: "Desligar equipamentos", horario: "22:30", concluido: false },
-        { id: "12", titulo: "Limpar e higienizar praça", horario: "22:30", concluido: false },
-        { id: "13", titulo: "Armazenar insumos corretamente", horario: "22:45", concluido: false },
-        { id: "14", titulo: "Verificar fechamento de geladeiras", horario: "23:00", concluido: false },
-      ]
+      deveres: deveresDB
+        .filter(d => d.secao === "fechamento")
+        .map(d => ({ ...d, concluido: deveresConcluidosLocal.has(d.id) }))
     }
-  ]);
+  ];
 
-  const toggleDever = (secaoTitulo: string, deverId: string) => {
-    setSecoes(secoes.map(secao => {
-      if (secao.titulo === secaoTitulo) {
-        return {
-          ...secao,
-          deveres: secao.deveres.map(dever => 
-            dever.id === deverId ? { ...dever, concluido: !dever.concluido } : dever
-          )
-        };
-      }
-      return secao;
-    }));
+  const toggleDever = (deverId: number) => {
+    const estaConcluido = deveresConcluidosLocal.has(deverId);
+    
+    if (estaConcluido) {
+      // Desmarcar
+      setDeveresConcluidosLocal(prev => {
+        const novo = new Set(prev);
+        novo.delete(deverId);
+        return novo;
+      });
+      desfazerConclusao.mutate({ deverId });
+    } else {
+      // Marcar como concluído
+      setDeveresConcluidosLocal(prev => new Set(prev).add(deverId));
+      concluirDever.mutate({ deverId });
+    }
   };
 
   const getTituloSecao = (titulo: string) => {
@@ -79,17 +129,54 @@ export default function Deveres() {
 
   const getProgressoSecao = (secao: SecaoDever) => {
     const total = secao.deveres.length;
+    if (total === 0) return { total: 0, concluidos: 0, percentual: 0 };
     const concluidos = secao.deveres.filter(d => d.concluido).length;
     return { total, concluidos, percentual: Math.round((concluidos / total) * 100) };
   };
 
   const progressoGeral = () => {
     const total = secoes.reduce((acc, s) => acc + s.deveres.length, 0);
+    if (total === 0) return { total: 0, concluidos: 0, percentual: 0 };
     const concluidos = secoes.reduce((acc, s) => acc + s.deveres.filter(d => d.concluido).length, 0);
     return { total, concluidos, percentual: Math.round((concluidos / total) * 100) };
   };
 
   const geral = progressoGeral();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (deveresDB.length === 0) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-100 pb-6">
+          <div>
+            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1">Rotina Diária</h2>
+            <h1 className="text-3xl font-black tracking-tighter uppercase leading-tight text-[#1A1A1A]">
+              Checklist de Deveres
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">Obrigações do turno - {new Date().toLocaleDateString('pt-BR')}</p>
+          </div>
+        </div>
+        
+        <Card className="border-0 shadow-sm bg-white rounded-[2rem] overflow-hidden">
+          <CardContent className="p-8 text-center">
+            <ListChecks className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Nenhuma tarefa cadastrada para hoje.</p>
+            <p className="text-sm text-gray-400 mt-2">
+              As tarefas são configuradas pelo gestor na área de Gestão de Tarefas.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -145,7 +232,7 @@ export default function Deveres() {
 
       {/* Seções de Deveres */}
       <div className="space-y-4">
-        {secoes.map((secao) => {
+        {secoes.filter(s => s.deveres.length > 0).map((secao) => {
           const progresso = getProgressoSecao(secao);
           const isExpanded = expandedSection === secao.titulo;
           
@@ -190,7 +277,7 @@ export default function Deveres() {
                   {secao.deveres.map((dever) => (
                     <button
                       key={dever.id}
-                      onClick={() => toggleDever(secao.titulo, dever.id)}
+                      onClick={() => toggleDever(dever.id)}
                       className={cn(
                         "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
                         dever.concluido 

@@ -39,6 +39,8 @@ import {
   ChevronRight,
   Eye,
   BarChart3,
+  AlertTriangle,
+  Package,
 } from "lucide-react";
 
 export default function ProducaoGestor() {
@@ -61,11 +63,25 @@ export default function ProducaoGestor() {
   // Colaboradores para exibir responsáveis
   const { data: colaboradores = [] } = trpc.colaboradores.listAtivos.useQuery();
   
+  // Buscar insumos com estoque baixo (preparos)
+  const { data: todosInsumos = [] } = trpc.insumos.list.useQuery({});
+  
+  // Filtrar preparos com estoque baixo ou crítico
+  const preparosBaixos = todosInsumos.filter(i => 
+    (i.categoria?.toLowerCase().includes("preparo") || i.codigo?.startsWith("(PR)")) &&
+    (i.status === "Baixo" || i.status === "Crítico")
+  );
+  
   // Estatísticas
   const lotesNecessarios = lotes.filter(l => l.status === "necessario");
   const lotesEmProducao = lotes.filter(l => l.status === "em_producao");
   const lotesProntos = lotes.filter(l => l.status === "pronto");
   const lotesFinalizados = lotes.filter(l => l.status === "finalizado");
+  
+  // Total de itens necessários (lotes + preparos baixos não duplicados)
+  const idsLotesNecessarios = new Set(lotesNecessarios.map(l => l.insumoId));
+  const preparosBaixosSemDuplicados = preparosBaixos.filter(p => !idsLotesNecessarios.has(p.id));
+  const totalNecessarios = lotesNecessarios.length + preparosBaixosSemDuplicados.length;
   
   // Filtrar diário
   const diarioFiltrado = diario.filter(item => {
@@ -155,7 +171,7 @@ export default function ProducaoGestor() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Necessário</p>
-                <p className="text-2xl font-bold text-red-400">{lotesNecessarios.length}</p>
+                <p className="text-2xl font-bold text-red-400">{totalNecessarios}</p>
               </div>
               <PauseCircle className="h-8 w-8 text-red-400/50" />
             </div>
@@ -220,13 +236,14 @@ export default function ProducaoGestor() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
-                  Necessário ({lotesNecessarios.length})
+                  Necessário ({totalNecessarios})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+                {/* Lotes já criados */}
                 {lotesNecessarios.map(lote => (
                   <Card 
-                    key={lote.id} 
+                    key={`lote-${lote.id}`} 
                     className="bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
                     onClick={() => { setSelectedLote(lote); setShowDetails(true); }}
                   >
@@ -235,10 +252,49 @@ export default function ProducaoGestor() {
                       <p className="text-xs text-muted-foreground">
                         {lote.quantidadePlanejada} {lote.insumoUnidade}
                       </p>
+                      <Badge variant="outline" className="mt-1 text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                        Lote agendado
+                      </Badge>
                     </CardContent>
                   </Card>
                 ))}
-                {lotesNecessarios.length === 0 && (
+                
+                {/* Preparos com estoque baixo (não duplicados) */}
+                {preparosBaixosSemDuplicados.map(preparo => (
+                  <Card 
+                    key={`preparo-${preparo.id}`} 
+                    className="bg-red-500/5 border-red-500/20 cursor-pointer hover:bg-red-500/10 transition-colors"
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{preparo.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Estoque: {parseFloat(preparo.estoqueAtual).toFixed(1)} {preparo.unidade}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Mínimo: {parseFloat(preparo.estoqueMinimo).toFixed(1)} {preparo.unidade}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant="outline" 
+                          className={preparo.status === "Crítico" 
+                            ? "bg-red-500/20 text-red-400 border-red-500/30" 
+                            : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                          }
+                        >
+                          {preparo.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1 mt-2 text-xs text-orange-400">
+                        <AlertTriangle className="h-3 w-3" />
+                        Estoque baixo - necessita produção
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {totalNecessarios === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     Nenhum item necessário
                   </p>
@@ -350,99 +406,95 @@ export default function ProducaoGestor() {
           {/* Tabela de Histórico */}
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="text-right">Quantidade</TableHead>
-                      <TableHead>Responsável</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Custo</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data/Hora</TableHead>
+                    <TableHead>Produto</TableHead>
+                    <TableHead className="text-right">Quantidade</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Custo</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {diarioFiltrado.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-sm">
+                        {new Date(item.createdAt).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </TableCell>
+                      <TableCell className="font-medium">{item.produto}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {parseFloat(item.quantidadeProduzida).toFixed(2)} {item.unidade}
+                      </TableCell>
+                      <TableCell>{item.responsavel || "-"}</TableCell>
+                      <TableCell>{getStatusBadge(item.statusProducao)}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {item.custoTotal ? `R$ ${parseFloat(item.custoTotal).toFixed(2)}` : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {diarioFiltrado.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-sm">
-                          {new Date(item.createdAt).toLocaleString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </TableCell>
-                        <TableCell className="font-medium">{item.produto}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {item.quantidadeProduzida} {item.unidade}
-                        </TableCell>
-                        <TableCell>{item.responsavel || "-"}</TableCell>
-                        <TableCell>{getStatusBadge(item.statusProducao)}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {item.custoTotal ? `R$ ${parseFloat(item.custoTotal).toFixed(2)}` : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {diarioFiltrado.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          Nenhum registro encontrado
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                  {diarioFiltrado.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        Nenhum registro encontrado
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Modal de Detalhes do Lote */}
+      {/* Dialog de Detalhes do Lote */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Detalhes do Lote</DialogTitle>
           </DialogHeader>
           {selectedLote && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Produto</p>
-                  <p className="font-medium">{selectedLote.insumoNome}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Status</p>
-                  {getStatusBadge(selectedLote.status)}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Quantidade Planejada</p>
-                  <p className="font-mono">{selectedLote.quantidadePlanejada} {selectedLote.insumoUnidade}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Quantidade Produzida</p>
-                  <p className="font-mono">{selectedLote.quantidadeProduzida || "-"} {selectedLote.insumoUnidade}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Responsável</p>
-                  <p>{selectedLote.responsavel || "-"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Data Agendada</p>
-                  <p>{new Date(selectedLote.dataAgendada).toLocaleDateString('pt-BR')}</p>
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Produto:</span>
+                <span className="font-medium">{selectedLote.insumoNome}</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Quantidade:</span>
+                <span className="font-mono">{selectedLote.quantidadePlanejada} {selectedLote.insumoUnidade}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                {getStatusBadge(selectedLote.status)}
+              </div>
+              {selectedLote.responsavel && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Responsável:</span>
+                  <span>{selectedLote.responsavel}</span>
+                </div>
+              )}
+              {selectedLote.dataAgendada && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Agendado para:</span>
+                  <span>{new Date(selectedLote.dataAgendada).toLocaleDateString('pt-BR')}</span>
+                </div>
+              )}
               {selectedLote.observacao && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Observação</p>
-                  <p className="text-sm">{selectedLote.observacao}</p>
+                  <span className="text-muted-foreground">Observação:</span>
+                  <p className="mt-1 text-sm bg-secondary/30 p-2 rounded">{selectedLote.observacao}</p>
                 </div>
               )}
             </div>

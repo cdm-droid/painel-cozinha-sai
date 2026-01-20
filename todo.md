@@ -134,3 +134,10 @@
 - [ ] Criar página "Equipe" para cadastro de colaboradores
   - [ ] Banco de dados: nome, cargo, função, dados pertinentes
   - [ ] Vincular colaboradores às produções e tarefas
+
+## Concluído - Melhorias Estoque e Produção (Jan 2026)
+
+- [x] Adicionar aba "Estoque Geral" na seção Estoque do Gestor
+- [x] Adicionar aba "Preparos" na seção Estoque do Gestor (vinculada ao banco de dados do painel operacional)
+- [x] Mostrar itens com estoque baixo no quadro "Necessários" da Produção Gestor
+- [x] Unificar banco de dados de tarefas entre Gestão de Tarefas (Gestor) e Deveres (Operacional)
