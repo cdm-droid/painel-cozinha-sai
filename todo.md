@@ -97,3 +97,17 @@
 - [x] Atualizar página de Insumos do gestor com checkbox
 - [x] Atualizar Contagem Diária para buscar itens marcados dinamicamente
 - [x] 8 itens originais pré-marcados no banco
+
+## Concluído - Calendário e Gestão de Tarefas
+- [x] Calendário mensal no Quadro de Produção
+  - [x] Visualização em calendário (30 dias)
+  - [x] Agendamento de preparos com data futura
+  - [x] Navegação entre meses
+  - [x] Lotes agendados aparecem no dia correto
+- [x] Gestão de Tarefas aprimorada (Gestor)
+  - [x] CRUD completo de tarefas
+  - [x] Recorrência: diária, semanal (dia específico), mensal, única
+  - [x] Categorias: Operacional, Manutenção, Limpeza, Administrativo
+  - [x] Seções: Abertura, Durante Operação, Fechamento
+  - [x] Ativar/desativar tarefas
+  - [x] 29 testes automatizados passando

@@ -17,6 +17,7 @@ import Calculadora from "./pages/Calculadora";
 import Deveres from "./pages/Deveres";
 import Preparo from "./pages/Preparo";
 import KanbanProducao from "./pages/KanbanProducao";
+import GestaoTarefas from "./pages/GestaoTarefas";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 
@@ -60,6 +61,7 @@ function Router() {
         <Route path="/deveres" component={Deveres} />
         <Route path="/preparo" component={Preparo} />
         <Route path="/kanban-producao" component={KanbanProducao} />
+        <Route path="/gestao-tarefas" component={GestaoTarefas} />
         {/* Rotas placeholder para funcionalidades futuras */}
         <Route path="/cmv" component={() => <PlaceholderPage title="CMV" subtitle="Custo de Mercadoria Vendida" />} />
         <Route path="/historico-movimentacao" component={() => <PlaceholderPage title="Histórico" subtitle="Movimentações de Estoque" />} />

@@ -50,6 +50,13 @@
       "when": 1766791920384,
       "tag": "0006_strong_karen_page",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1768943565975,
+      "tag": "0007_steady_norman_osborn",
+      "breakpoints": true
     }
   ]
 }

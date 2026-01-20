@@ -795,6 +795,7 @@ export const deveresRouter = router({
   list: publicProcedure
     .input(z.object({
       secao: z.enum(["abertura", "durante_operacao", "fechamento"]).optional(),
+      categoria: z.enum(["operacional", "manutencao", "limpeza", "administrativo"]).optional(),
       ativo: z.boolean().optional(),
     }).optional())
     .query(async ({ input }) => {
@@ -807,6 +808,9 @@ export const deveresRouter = router({
       if (input?.secao) {
         conditions.push(eq(deveres.secao, input.secao));
       }
+      if (input?.categoria) {
+        conditions.push(eq(deveres.categoria, input.categoria));
+      }
       if (input?.ativo !== undefined) {
         conditions.push(eq(deveres.ativo, input.ativo));
       }
@@ -815,7 +819,45 @@ export const deveresRouter = router({
         query = query.where(and(...conditions)) as typeof query;
       }
 
-      return await query.orderBy(asc(deveres.secao), asc(deveres.ordem));
+      return await query.orderBy(asc(deveres.categoria), asc(deveres.secao), asc(deveres.ordem));
+    }),
+
+  // Listar deveres para uma data específica (considerando recorrência)
+  listForDate: publicProcedure
+    .input(z.object({
+      data: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const data = new Date(input.data);
+      const diaSemana = data.getDay(); // 0-6
+      const diaMes = data.getDate(); // 1-31
+
+      // Buscar todos os deveres ativos
+      const todosDeveresAtivos = await db.select()
+        .from(deveres)
+        .where(eq(deveres.ativo, true))
+        .orderBy(asc(deveres.categoria), asc(deveres.secao), asc(deveres.ordem));
+
+      // Filtrar por recorrência
+      return todosDeveresAtivos.filter(dever => {
+        switch (dever.recorrencia) {
+          case 'diaria':
+            return true;
+          case 'semanal':
+            return dever.diaSemana === diaSemana;
+          case 'mensal':
+            return dever.diaMes === diaMes;
+          case 'unica':
+            if (!dever.dataEspecifica) return false;
+            const dataEsp = new Date(dever.dataEspecifica);
+            return dataEsp.toDateString() === data.toDateString();
+          default:
+            return true;
+        }
+      });
     }),
 
   // Criar dever
@@ -823,7 +865,12 @@ export const deveresRouter = router({
     .input(z.object({
       titulo: z.string(),
       descricao: z.string().optional(),
+      categoria: z.enum(["operacional", "manutencao", "limpeza", "administrativo"]).default("operacional"),
       secao: z.enum(["abertura", "durante_operacao", "fechamento"]),
+      recorrencia: z.enum(["diaria", "semanal", "mensal", "unica"]).default("diaria"),
+      diaSemana: z.number().min(0).max(6).optional(),
+      diaMes: z.number().min(1).max(31).optional(),
+      dataEspecifica: z.string().optional(),
       horario: z.string().optional(),
       ordem: z.number().optional(),
     }))
@@ -834,12 +881,81 @@ export const deveresRouter = router({
       const result = await db.insert(deveres).values({
         titulo: input.titulo,
         descricao: input.descricao,
+        categoria: input.categoria,
         secao: input.secao,
+        recorrencia: input.recorrencia,
+        diaSemana: input.diaSemana,
+        diaMes: input.diaMes,
+        dataEspecifica: input.dataEspecifica ? new Date(input.dataEspecifica) : undefined,
         horario: input.horario,
         ordem: input.ordem || 0,
       });
 
       return { success: true, id: result[0].insertId };
+    }),
+
+  // Atualizar dever
+  update: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      titulo: z.string().optional(),
+      descricao: z.string().optional(),
+      categoria: z.enum(["operacional", "manutencao", "limpeza", "administrativo"]).optional(),
+      secao: z.enum(["abertura", "durante_operacao", "fechamento"]).optional(),
+      recorrencia: z.enum(["diaria", "semanal", "mensal", "unica"]).optional(),
+      diaSemana: z.number().min(0).max(6).nullable().optional(),
+      diaMes: z.number().min(1).max(31).nullable().optional(),
+      dataEspecifica: z.string().nullable().optional(),
+      horario: z.string().optional(),
+      ordem: z.number().optional(),
+      ativo: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const { id, ...updateData } = input;
+      const updateValues: any = {};
+
+      if (updateData.titulo !== undefined) updateValues.titulo = updateData.titulo;
+      if (updateData.descricao !== undefined) updateValues.descricao = updateData.descricao;
+      if (updateData.categoria !== undefined) updateValues.categoria = updateData.categoria;
+      if (updateData.secao !== undefined) updateValues.secao = updateData.secao;
+      if (updateData.recorrencia !== undefined) updateValues.recorrencia = updateData.recorrencia;
+      if (updateData.diaSemana !== undefined) updateValues.diaSemana = updateData.diaSemana;
+      if (updateData.diaMes !== undefined) updateValues.diaMes = updateData.diaMes;
+      if (updateData.dataEspecifica !== undefined) {
+        updateValues.dataEspecifica = updateData.dataEspecifica ? new Date(updateData.dataEspecifica) : null;
+      }
+      if (updateData.horario !== undefined) updateValues.horario = updateData.horario;
+      if (updateData.ordem !== undefined) updateValues.ordem = updateData.ordem;
+      if (updateData.ativo !== undefined) updateValues.ativo = updateData.ativo;
+
+      await db.update(deveres)
+        .set(updateValues)
+        .where(eq(deveres.id, id));
+
+      return { success: true };
+    }),
+
+  // Deletar dever
+  delete: publicProcedure
+    .input(z.object({
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Primeiro deletar conclusões relacionadas
+      await db.delete(deveresConcluidos)
+        .where(eq(deveresConcluidos.deverId, input.id));
+
+      // Depois deletar o dever
+      await db.delete(deveres)
+        .where(eq(deveres.id, input.id));
+
+      return { success: true };
     }),
 
   // Marcar dever como concluído
@@ -922,6 +1038,8 @@ export const lotesProducaoRouter = router({
     .input(z.object({
       status: z.enum(["necessario", "em_producao", "pronto", "finalizado"]).optional(),
       incluirFinalizados: z.boolean().optional(),
+      dataInicio: z.string().optional(), // Filtro por data de agendamento
+      dataFim: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -938,11 +1056,45 @@ export const lotesProducaoRouter = router({
         conditions.push(sql`${lotesProducao.status} != 'finalizado'`);
       }
 
+      // Filtro por intervalo de datas
+      if (input?.dataInicio) {
+        conditions.push(gte(lotesProducao.dataAgendada, new Date(input.dataInicio)));
+      }
+      if (input?.dataFim) {
+        const dataFim = new Date(input.dataFim);
+        dataFim.setHours(23, 59, 59, 999);
+        conditions.push(sql`${lotesProducao.dataAgendada} <= ${dataFim}`);
+      }
+
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as typeof query;
       }
 
-      return await query.orderBy(desc(lotesProducao.criadoEm));
+      return await query.orderBy(asc(lotesProducao.dataAgendada), desc(lotesProducao.criadoEm));
+    }),
+
+  // Listar lotes por mês (para calendário)
+  listByMonth: publicProcedure
+    .input(z.object({
+      ano: z.number(),
+      mes: z.number(), // 1-12
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const inicioMes = new Date(input.ano, input.mes - 1, 1);
+      const fimMes = new Date(input.ano, input.mes, 0, 23, 59, 59, 999);
+
+      const lotes = await db.select()
+        .from(lotesProducao)
+        .where(and(
+          gte(lotesProducao.dataAgendada, inicioMes),
+          sql`${lotesProducao.dataAgendada} <= ${fimMes}`
+        ))
+        .orderBy(asc(lotesProducao.dataAgendada));
+
+      return lotes;
     }),
 
   // Buscar itens de preparo que precisam de produção (estoque baixo/crítico)
@@ -965,13 +1117,14 @@ export const lotesProducaoRouter = router({
     return itens;
   }),
 
-  // Criar novo lote de produção
+  // Criar novo lote de produção (com agendamento)
   create: publicProcedure
     .input(z.object({
       insumoId: z.number(),
       insumoNome: z.string(),
       insumoUnidade: z.string(),
       quantidadePlanejada: z.string(),
+      dataAgendada: z.string().optional(), // Data para agendamento futuro
       responsavel: z.string().optional(),
       observacao: z.string().optional(),
     }))
@@ -984,6 +1137,7 @@ export const lotesProducaoRouter = router({
         insumoNome: input.insumoNome,
         insumoUnidade: input.insumoUnidade,
         quantidadePlanejada: input.quantidadePlanejada,
+        dataAgendada: input.dataAgendada ? new Date(input.dataAgendada) : new Date(),
         responsavel: input.responsavel,
         observacao: input.observacao,
         status: "necessario",

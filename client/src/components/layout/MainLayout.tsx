@@ -81,6 +81,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { id: 'historico', label: 'Histórico', icon: History, href: '/historico-movimentacao' },
         { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
         { id: 'equipe', label: 'Equipe', icon: Users, href: '/equipe' },
+        { id: 'tarefas', label: 'Gestão de Tarefas', icon: ListChecks, href: '/gestao-tarefas', sub: 'Rotinas e deveres' },
       ]
     },
     { 

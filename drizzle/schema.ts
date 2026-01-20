@@ -179,7 +179,18 @@ export const deveres = mysqlTable("deveres", {
   id: int("id").autoincrement().primaryKey(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
+  // Categoria: Operacional, Manutenção, Limpeza, Administrativo
+  categoria: mysqlEnum("categoria", ["operacional", "manutencao", "limpeza", "administrativo"]).default("operacional").notNull(),
+  // Seção do dia
   secao: mysqlEnum("secao", ["abertura", "durante_operacao", "fechamento"]).notNull(),
+  // Recorrência: diaria, semanal, mensal, unica
+  recorrencia: mysqlEnum("recorrencia", ["diaria", "semanal", "mensal", "unica"]).default("diaria").notNull(),
+  // Dia da semana (0-6, domingo=0) - usado quando recorrencia = semanal
+  diaSemana: int("diaSemana"),
+  // Dia do mês (1-31) - usado quando recorrencia = mensal
+  diaMes: int("diaMes"),
+  // Data específica - usado quando recorrencia = unica
+  dataEspecifica: timestamp("dataEspecifica"),
   horario: varchar("horario", { length: 10 }),
   ordem: int("ordem").default(0),
   ativo: boolean("ativo").default(true).notNull(),
@@ -219,6 +230,8 @@ export const lotesProducao = mysqlTable("lotes_producao", {
   quantidadeProduzida: decimal("quantidadeProduzida", { precision: 10, scale: 3 }).default("0"),
   // Status do lote no Kanban
   status: mysqlEnum("status", ["necessario", "em_producao", "pronto", "finalizado"]).default("necessario").notNull(),
+  // Data agendada para produção (permite agendamento futuro)
+  dataAgendada: timestamp("dataAgendada").defaultNow().notNull(),
   // Responsável e timestamps
   responsavel: varchar("responsavel", { length: 100 }),
   userId: int("userId"),
