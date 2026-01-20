@@ -185,11 +185,11 @@ export default function EstoqueGeral() {
                   </Button>
                   <Button 
                     variant={contagemFilter === 'critico' ? "secondary" : "ghost"} 
-                    className="justify-start text-destructive hover:text-destructive"
+                    className="justify-start text-amber-600 hover:text-amber-700"
                     onClick={() => setContagemFilter('critico')}
                   >
                     <AlertTriangle className="mr-2 h-4 w-4" />
-                    Estoque Crítico
+                    Estoque Baixo
                   </Button>
                   <Button 
                     variant={contagemFilter === 'geral' ? "secondary" : "ghost"} 
@@ -252,8 +252,8 @@ export default function EstoqueGeral() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border border-border overflow-hidden">
-              <Table>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <Table className="min-w-full">
                 <TableHeader className="bg-secondary/50">
                   <TableRow>
                     {!isOperacional && <TableHead className="w-[80px] font-bold">Código</TableHead>}

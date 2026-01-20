@@ -25,7 +25,8 @@ import {
   Users,
   Layers,
   Timer,
-  Fingerprint
+  Fingerprint,
+  Boxes
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,6 +68,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       ]
     }
   ] : [
+    // PAINEL GESTOR - Nova estrutura
     { 
       section: "Estratégico", 
       items: [
@@ -77,8 +79,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { 
       section: "Gestão", 
       items: [
-        { id: 'insumos', label: 'Insumos', icon: Package, href: '/estoque-geral' },
-        { id: 'historico', label: 'Histórico', icon: History, href: '/historico-movimentacao' },
+        { id: 'estoque', label: 'Estoque', icon: Boxes, href: '/estoque', sub: 'Insumos, Sensível, Histórico' },
         { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
         { id: 'equipe', label: 'Equipe', icon: Users, href: '/equipe' },
         { id: 'tarefas', label: 'Gestão de Tarefas', icon: ListChecks, href: '/gestao-tarefas', sub: 'Rotinas e deveres' },
@@ -87,9 +88,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { 
       section: "Operacional", 
       items: [
-        { id: 'producao', label: 'Quadro de Produção', icon: ChefHat, href: '/kanban-producao' },
-        { id: 'diario', label: 'Diário de Produção', icon: ClipboardList, href: '/diario-producao' },
-        { id: 'contagem', label: 'Contagem Diária', icon: ClipboardCheck, href: '/contagem-diaria' },
+        { id: 'producao', label: 'Produção', icon: ChefHat, href: '/producao', sub: 'Quadro e Diário unificados' },
         { id: 'perdas', label: 'Perdas', icon: AlertOctagon, href: '/perdas' },
       ]
     },

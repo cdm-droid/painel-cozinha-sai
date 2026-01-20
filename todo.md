@@ -70,7 +70,6 @@
   - [x] Vincular ao banco de dados TRPC existente
   - [x] Criar tabela de audit_logs
   - [x] Criar tabela de deveres e deveres_concluidos
-  - [x] APIs de auditoria e deveres
 
 ## Concluído - Reorganização Menu Estoque
 - [x] Substituir "Insumos Críticos" por "Preparo" com destaque (badge "Novo")
@@ -111,3 +110,27 @@
   - [x] Seções: Abertura, Durante Operação, Fechamento
   - [x] Ativar/desativar tarefas
   - [x] 29 testes automatizados passando
+
+## Concluído - Reestruturação Completa dos Painéis (Jan 2026)
+
+### Painel Gestor
+- [x] Unificar "Quadro de Produção" e "Diário de Produção" em página única
+- [x] Seção "Estoque" (renomeada de "Insumos")
+  - [x] Página Insumos: melhorar visualização, coluna "Qtde em Estoque"
+  - [x] Filtros em uma linha, cabeçalho fixo
+  - [x] Edição inline dos itens (clique na linha abre dialog)
+  - [x] Integrar "Contagem Diária" para dentro de Estoque (aba Sensível)
+  - [x] Estoque Sensível com quadros clicáveis (Críticos, Baixos, OK)
+  - [x] Histórico com resumo em quadros e detalhes ao clicar na data
+- [x] Atualizar navegação lateral com nova estrutura
+- [x] Remover "Histórico" e "Contagem Diária" do menu lateral
+
+### Painel Operacional
+- [x] Quadro de Produção: botão para lote avulso (Novo Lote Avulso)
+- [x] Estoque de Insumos: corrigir scroll horizontal
+- [x] Renomear filtro "Estoque Crítico" para "Estoque Baixo"
+
+### Pendentes
+- [ ] Criar página "Equipe" para cadastro de colaboradores
+  - [ ] Banco de dados: nome, cargo, função, dados pertinentes
+  - [ ] Vincular colaboradores às produções e tarefas

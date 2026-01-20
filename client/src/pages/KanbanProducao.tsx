@@ -330,6 +330,18 @@ export default function KanbanProducao() {
             Gerencie o fluxo de produção dos preparos da cozinha
           </p>
         </div>
+        <Button
+          onClick={() => {
+            setSelectedItem(null);
+            setQuantidadePlanejada("");
+            setDataAgendada(new Date().toISOString().split('T')[0]);
+            setNovoLoteDialog(true);
+          }}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Novo Lote Avulso
+        </Button>
       </div>
 
       {/* Tabs: Kanban / Calendário */}

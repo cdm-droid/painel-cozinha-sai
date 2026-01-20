@@ -12,6 +12,7 @@ import {
   deveres,
   deveresConcluidos,
   lotesProducao,
+  colaboradores,
   InsertInsumo,
   InsertFichaTecnica,
   InsertContagemEstoque,
@@ -22,6 +23,7 @@ import {
   InsertDever,
   InsertDeverConcluido,
   InsertLoteProducao,
+  InsertColaborador,
   ComponenteFicha
 } from "../drizzle/schema";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -1295,5 +1297,159 @@ export const lotesProducaoRouter = router({
         ));
 
       return { success: true };
+    }),
+});
+
+
+// ============== COLABORADORES (EQUIPE) ==============
+
+export const colaboradoresRouter = router({
+  // Listar todos os colaboradores
+  list: publicProcedure
+    .input(z.object({
+      funcao: z.enum(["cozinheiro", "auxiliar", "chapeiro", "atendente", "gerente", "outro"]).optional(),
+      turno: z.enum(["manha", "tarde", "noite", "integral"]).optional(),
+      ativo: z.boolean().optional(),
+      search: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      let query = db.select().from(colaboradores);
+      
+      const conditions = [];
+      
+      if (input?.funcao) {
+        conditions.push(eq(colaboradores.funcao, input.funcao));
+      }
+      
+      if (input?.turno) {
+        conditions.push(eq(colaboradores.turno, input.turno));
+      }
+      
+      if (input?.ativo !== undefined) {
+        conditions.push(eq(colaboradores.ativo, input.ativo));
+      }
+      
+      if (input?.search) {
+        conditions.push(
+          or(
+            like(colaboradores.nome, `%${input.search}%`),
+            like(colaboradores.apelido, `%${input.search}%`),
+            like(colaboradores.cargo, `%${input.search}%`)
+          )
+        );
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+
+      return await query.orderBy(asc(colaboradores.nome));
+    }),
+
+  // Buscar colaborador por ID
+  getById: publicProcedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+
+      const result = await db.select().from(colaboradores).where(eq(colaboradores.id, input)).limit(1);
+      return result[0] || null;
+    }),
+
+  // Criar novo colaborador
+  create: publicProcedure
+    .input(z.object({
+      nome: z.string(),
+      apelido: z.string().optional(),
+      cargo: z.string(),
+      funcao: z.enum(["cozinheiro", "auxiliar", "chapeiro", "atendente", "gerente", "outro"]),
+      telefone: z.string().optional(),
+      email: z.string().optional(),
+      dataAdmissao: z.date().optional(),
+      turno: z.enum(["manha", "tarde", "noite", "integral"]).optional(),
+      observacoes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const newColaborador: InsertColaborador = {
+        nome: input.nome,
+        apelido: input.apelido,
+        cargo: input.cargo,
+        funcao: input.funcao,
+        telefone: input.telefone,
+        email: input.email,
+        dataAdmissao: input.dataAdmissao,
+        turno: input.turno || "integral",
+        observacoes: input.observacoes,
+        ativo: true,
+      };
+
+      const result = await db.insert(colaboradores).values(newColaborador);
+      return { id: result[0].insertId, ...newColaborador };
+    }),
+
+  // Atualizar colaborador
+  update: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      nome: z.string().optional(),
+      apelido: z.string().optional(),
+      cargo: z.string().optional(),
+      funcao: z.enum(["cozinheiro", "auxiliar", "chapeiro", "atendente", "gerente", "outro"]).optional(),
+      telefone: z.string().optional(),
+      email: z.string().optional(),
+      dataAdmissao: z.date().optional(),
+      turno: z.enum(["manha", "tarde", "noite", "integral"]).optional(),
+      observacoes: z.string().optional(),
+      ativo: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const { id, ...updateData } = input;
+      
+      await db.update(colaboradores)
+        .set(updateData)
+        .where(eq(colaboradores.id, id));
+
+      return { success: true };
+    }),
+
+  // Excluir colaborador (soft delete - apenas desativa)
+  delete: publicProcedure
+    .input(z.number())
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.update(colaboradores)
+        .set({ ativo: false })
+        .where(eq(colaboradores.id, input));
+
+      return { success: true };
+    }),
+
+  // Listar colaboradores ativos para seleção (dropdown)
+  listAtivos: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+
+      return await db.select({
+        id: colaboradores.id,
+        nome: colaboradores.nome,
+        apelido: colaboradores.apelido,
+        funcao: colaboradores.funcao,
+      })
+      .from(colaboradores)
+      .where(eq(colaboradores.ativo, true))
+      .orderBy(asc(colaboradores.nome));
     }),
 });

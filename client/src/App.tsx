@@ -18,6 +18,8 @@ import Deveres from "./pages/Deveres";
 import Preparo from "./pages/Preparo";
 import KanbanProducao from "./pages/KanbanProducao";
 import GestaoTarefas from "./pages/GestaoTarefas";
+import ProducaoGestor from "./pages/ProducaoGestor";
+import EstoqueGestor from "./pages/EstoqueGestor";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 
@@ -51,6 +53,10 @@ function Router() {
     <MainLayout>
       <Switch>
         <Route path="/" component={Home} />
+        {/* Rotas do Gestor - Nova estrutura */}
+        <Route path="/estoque" component={EstoqueGestor} />
+        <Route path="/producao" component={ProducaoGestor} />
+        {/* Rotas legadas mantidas para compatibilidade */}
         <Route path="/estoque-critico" component={EstoqueCritico} />
         <Route path="/estoque-geral" component={EstoqueGeral} />
         <Route path="/fichas-tecnicas" component={FichasTecnicas} />
@@ -64,7 +70,6 @@ function Router() {
         <Route path="/gestao-tarefas" component={GestaoTarefas} />
         {/* Rotas placeholder para funcionalidades futuras */}
         <Route path="/cmv" component={() => <PlaceholderPage title="CMV" subtitle="Custo de Mercadoria Vendida" />} />
-        <Route path="/historico-movimentacao" component={() => <PlaceholderPage title="Histórico" subtitle="Movimentações de Estoque" />} />
         <Route path="/equipe" component={() => <PlaceholderPage title="Equipe" subtitle="Gestão de Colaboradores" />} />
         <Route path="/auditoria" component={() => <PlaceholderPage title="Auditoria" subtitle="Logs de Operação" />} />
         <Route path="/404" component={NotFound} />

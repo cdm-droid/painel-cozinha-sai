@@ -246,3 +246,27 @@ export const lotesProducao = mysqlTable("lotes_producao", {
 
 export type LoteProducao = typeof lotesProducao.$inferSelect;
 export type InsertLoteProducao = typeof lotesProducao.$inferInsert;
+
+
+/**
+ * Colaboradores (Equipe)
+ * Cadastro de funcionários para vincular a produções e tarefas
+ */
+export const colaboradores = mysqlTable("colaboradores", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  apelido: varchar("apelido", { length: 100 }),
+  cargo: varchar("cargo", { length: 100 }).notNull(),
+  funcao: mysqlEnum("funcao", ["cozinheiro", "auxiliar", "chapeiro", "atendente", "gerente", "outro"]).default("auxiliar").notNull(),
+  telefone: varchar("telefone", { length: 20 }),
+  email: varchar("email", { length: 320 }),
+  dataAdmissao: timestamp("dataAdmissao"),
+  turno: mysqlEnum("turno", ["manha", "tarde", "noite", "integral"]).default("integral"),
+  ativo: boolean("ativo").default(true).notNull(),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Colaborador = typeof colaboradores.$inferSelect;
+export type InsertColaborador = typeof colaboradores.$inferInsert;
