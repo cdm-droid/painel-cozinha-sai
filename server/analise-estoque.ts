@@ -8,12 +8,12 @@ import {
   fichasTecnicas,
   perdas,
   insumos,
-  contagensEstoque
+  contagensEstoque,
+  entradasEstoque // <--- Nova tabela
 } from "../drizzle/schema";
 import { publicProcedure, router } from "./_core/trpc";
 
 export const analiseEstoqueRouter = router({
-  // Relatório de Divergência (Auditoria)
   gerarRelatorio: publicProcedure
     .input(z.object({
       dataInicio: z.string(),
@@ -28,7 +28,37 @@ export const analiseEstoqueRouter = router({
       const fim = new Date(input.dataFim);
       fim.setHours(23, 59, 59, 999);
 
-      // 1. Buscar Vendas no Período
+      // 1. Estrutura de Dados
+      const analise: Record<number, {
+        id: number,
+        nome: string,
+        unidade: string,
+        consumoTeorico: number, // Vendas
+        perdaDeclarada: number, // Desperdício
+        compras: number,        // Entradas Oficiais
+        ajustesContagem: number,// Diferença de Inventário
+        estoqueInicial: number | null,
+        estoqueFinal: number | null,
+        custoUnitario: number
+      }> = {};
+
+      const todosInsumos = await db.select().from(insumos).where(eq(insumos.ativo, true));
+      for (const ins of todosInsumos) {
+        analise[ins.id] = {
+          id: ins.id,
+          nome: ins.nome,
+          unidade: ins.unidade,
+          consumoTeorico: 0,
+          perdaDeclarada: 0,
+          compras: 0,
+          ajustesContagem: 0,
+          estoqueInicial: null,
+          estoqueFinal: null,
+          custoUnitario: parseFloat(ins.custoUnitario)
+        };
+      }
+
+      // 2. Vendas (Consumo Teórico)
       const vendas = await db.select({ id: vendasExternas.id })
         .from(vendasExternas)
         .where(and(
@@ -39,39 +69,7 @@ export const analiseEstoqueRouter = router({
       
       const vendasIds = vendas.map(v => v.id);
 
-      // Mapa para acumular dados por Insumo
-      // Key: insumoId, Value: { dados }
-      const analise: Record<number, {
-        id: number,
-        nome: string,
-        unidade: string,
-        consumoTeorico: number, // Vendas * Ficha
-        perdaDeclarada: number, // Registro de perdas
-        entradas: number,       // Compras/Ajustes positivos
-        saidasManuais: number,  // Ajustes negativos manuais
-        estoqueAtual: number,
-        custoUnitario: number
-      }> = {};
-
-      // Inicializar com todos os insumos ativos
-      const todosInsumos = await db.select().from(insumos).where(eq(insumos.ativo, true));
-      for (const ins of todosInsumos) {
-        analise[ins.id] = {
-          id: ins.id,
-          nome: ins.nome,
-          unidade: ins.unidade,
-          consumoTeorico: 0,
-          perdaDeclarada: 0,
-          entradas: 0,
-          saidasManuais: 0,
-          estoqueAtual: parseFloat(ins.estoqueAtual),
-          custoUnitario: parseFloat(ins.custoUnitario)
-        };
-      }
-
-      // 2. Calcular Consumo Teórico (Baseado nas Vendas Importadas)
       if (vendasIds.length > 0) {
-        // Busca itens vendidos que tenham ficha técnica vinculada
         const itensVendidos = await db.select({
           qtdVendida: itensVendaExterna.quantidade,
           componentes: fichasTecnicas.componentes
@@ -83,14 +81,11 @@ export const analiseEstoqueRouter = router({
 
         for (const item of itensVendidos) {
           const qtdVenda = parseFloat(item.qtdVendida);
-          const componentes = item.componentes as any[]; // Array de ingredientes da ficha
-
+          const componentes = item.componentes as any[];
           if (componentes && Array.isArray(componentes)) {
             for (const comp of componentes) {
               const insumoId = parseInt(comp.insumoId);
               if (analise[insumoId]) {
-                // Se vendi 10 Burgers e cada um leva 0.150kg de carne:
-                // Consumo = 10 * 0.150 = 1.5kg
                 analise[insumoId].consumoTeorico += (parseFloat(comp.quantidade) * qtdVenda);
               }
             }
@@ -98,65 +93,73 @@ export const analiseEstoqueRouter = router({
         }
       }
 
-      // 3. Somar Perdas Declaradas (Registradas na tela de Perdas)
-      const perdasPeriodo = await db.select()
+      // 3. Compras (Entradas Oficiais)
+      const entradas = await db.select()
+        .from(entradasEstoque)
+        .where(and(gte(entradasEstoque.dataEntrada, inicio), lte(entradasEstoque.dataEntrada, fim)));
+
+      for (const ent of entradas) {
+        if (analise[ent.insumoId]) {
+          analise[ent.insumoId].compras += parseFloat(ent.quantidade);
+        }
+      }
+
+      // 4. Perdas
+      const perdasList = await db.select()
         .from(perdas)
         .where(and(gte(perdas.createdAt, inicio), lte(perdas.createdAt, fim)));
 
-      for (const p of perdasPeriodo) {
+      for (const p of perdasList) {
         if (analise[p.insumoId]) {
           analise[p.insumoId].perdaDeclarada += parseFloat(p.quantidade);
         }
       }
 
-      // 4. Analisar Movimentações Manuais (Contagens de Estoque)
-      // Aqui assumimos: Diferença Positiva = Entrada/Compra. Diferença Negativa = Ajuste/Quebra não identificada.
-      // OBS: Isso é uma aproximação baseada no modelo atual.
-      const contagens = await db.select()
-        .from(contagensEstoque)
-        .where(and(gte(contagensEstoque.createdAt, inicio), lte(contagensEstoque.createdAt, fim)));
+      // 5. Contagens (Estoque Inicial e Final do período)
+      // Lógica simplificada: Pega a primeira contagem do período como "Inicial" e a última como "Final"
+      // Se não houver no período, tenta pegar a última contagem ANTES do período.
+      
+      for (const insumoIdStr in analise) {
+        const insumoId = parseInt(insumoIdStr);
+        
+        // Contagens dentro do período ordenadas por data
+        const contagensInsumo = await db.select()
+          .from(contagensEstoque)
+          .where(and(
+            eq(contagensEstoque.insumoId, insumoId),
+            gte(contagensEstoque.createdAt, inicio),
+            lte(contagensEstoque.createdAt, fim)
+          ))
+          .orderBy(contagensEstoque.createdAt);
 
-      for (const c of contagens) {
-        const diff = parseFloat(c.diferenca || "0");
-        if (analise[c.insumoId]) {
-          if (diff > 0) {
-            analise[c.insumoId].entradas += diff;
-          } else {
-            // Se for negativo, foi uma saída manual (ajuste de contagem)
-            analise[c.insumoId].saidasManuais += Math.abs(diff);
-          }
+        if (contagensInsumo.length > 0) {
+          analise[insumoId].estoqueInicial = parseFloat(contagensInsumo[0].quantidadeAnterior || "0"); 
+          analise[insumoId].estoqueFinal = parseFloat(contagensInsumo[contagensInsumo.length - 1].quantidadeContada);
         }
       }
 
-      // 5. Formatar e Calcular Divergência
-      // Focamos apenas nos itens que tiveram alguma movimentação para não poluir o relatório
+      // 6. Cálculo da Divergência
+      // Fórmula: Estoque Final Esperado = Inicial + Compras - Vendas - Perdas
+      // Divergência = Estoque Final Real (Contagem) - Estoque Final Esperado
+      
       return Object.values(analise)
-        .filter(i => i.consumoTeorico > 0 || i.perdaDeclarada > 0 || i.saidasManuais > 0)
+        .filter(i => i.consumoTeorico > 0 || i.compras > 0 || i.estoqueFinal !== null)
         .map(item => {
-          // A "Saída Total Real" é o que saiu do estoque fisicamente (ajustes manuais) + o que foi declarado como perda
-          const saidaReal = item.saidasManuais + item.perdaDeclarada;
-          
-          // Divergência:
-          // Se a Saída Real for MUITO maior que o Consumo Teórico, algo está errado (perda não declarada).
-          // Se a Saída Real for menor, pode ser erro de ficha técnica (sobra).
-          // NOTA: Como 'saidasManuais' inclui o ajuste de fim de dia, ela tende a englobar o consumo teórico.
-          // O cálculo ideal de divergência aqui é: (O que o sistema baixou automaticamente vs O que foi contado).
-          // Como este sistema baixa estoque na venda (se implementado) ou apenas ajusta na contagem:
-          
-          // Lógica Simplificada para Gestão Visual:
-          // Consumo Teórico: O que o Anota Aí diz que vendeu.
-          // Saída Real (Ajustes): O que o operador disse que sumiu do estoque na contagem.
-          
-          const divergencia = item.saidasManuais - item.consumoTeorico; 
-          // Se > 0: Saiu mais do estoque (contagem) do que foi vendido. (PREJUÍZO/PERDA)
-          // Se < 0: Vendeu-se mais do que saiu do estoque?? (Erro de ficha ou sobra)
+          let divergencia = 0;
+          let estoqueEsperado = 0;
+
+          if (item.estoqueInicial !== null && item.estoqueFinal !== null) {
+            estoqueEsperado = item.estoqueInicial + item.compras - item.consumoTeorico - item.perdaDeclarada;
+            divergencia = item.estoqueFinal - estoqueEsperado;
+          }
 
           return {
             ...item,
-            divergencia,
-            custoDivergencia: divergencia * item.custoUnitario
+            estoqueEsperado,
+            divergencia, // Negativo = Faltou (Prejuízo), Positivo = Sobrou
+            custoDivergencia: divergencia * item.custoUnitario * -1 // Inverte sinal para mostrar prejuízo como positivo (custo)
           };
         })
-        .sort((a, b) => b.custoDivergencia - a.custoDivergencia); // Ordenar pelos maiores prejuízos
+        .sort((a, b) => b.custoDivergencia - a.custoDivergencia);
     }),
 });
