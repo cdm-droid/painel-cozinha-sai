@@ -149,3 +149,16 @@
 - [x] Atualizar página de Fichas Técnicas do Gestor com botão de marcação (Switch)
 - [x] Atualizar página de Fichas Técnicas do Operacional para usar o mesmo banco de dados
 - [x] Filtrar fichas no painel operacional baseado no campo de visibilidade
+
+## Concluído - Estrutura Completa de Tarefas (Jan 2026)
+
+- [x] Atualizar schema de tarefas (deveres) com campos: área, fatorPrincipal, responsavel, operadorId
+- [x] Criar enums para Área (Cozinha, Caixa, Área Externa, Salão, Estoque)
+- [x] Criar enums para Fator Principal (Segurança, Higiene, Manutenção, Operacional, Qualidade)
+- [x] Criar enums para Responsável (Gerente, Chapeiro, Auxiliar de Cozinha)
+- [x] Implementar página de cadastro de Equipe (Colaboradores) com CRUD completo
+- [x] Vincular campo Operador ao cadastro de Colaboradores
+- [x] Atualizar Gestão de Tarefas do Gestor com novos campos no formulário
+- [x] Adicionar filtros por Área, Fator e Responsável na Gestão de Tarefas
+- [x] Atualizar Deveres do Operacional para exibir os novos campos
+- [x] Criar testes automatizados para as novas funcionalidades

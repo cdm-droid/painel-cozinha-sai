@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Plus, 
   Pencil, 
@@ -21,7 +22,12 @@ import {
   CalendarRange,
   CalendarClock,
   CheckCircle2,
-  XCircle
+  XCircle,
+  MapPin,
+  Shield,
+  User,
+  Users,
+  Filter
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -31,6 +37,10 @@ interface Dever {
   titulo: string;
   descricao: string | null;
   categoria: string;
+  area: string | null;
+  fatorPrincipal: string | null;
+  responsavel: string | null;
+  operadorId: number | null;
   secao: string;
   recorrencia: string;
   diaSemana: number | null;
@@ -47,6 +57,33 @@ const CATEGORIAS = {
   manutencao: { label: "Manutenção", icon: Wrench, color: "bg-orange-500" },
   limpeza: { label: "Limpeza", icon: Sparkles, color: "bg-green-500" },
   administrativo: { label: "Administrativo", icon: FileText, color: "bg-purple-500" },
+};
+
+const AREAS = {
+  cozinha: { label: "Cozinha", icon: "🍳" },
+  caixa: { label: "Caixa", icon: "💰" },
+  area_externa: { label: "Área Externa", icon: "🌳" },
+  salao: { label: "Salão", icon: "🪑" },
+  estoque: { label: "Estoque", icon: "📦" },
+  geral: { label: "Geral", icon: "🏢" },
+};
+
+const FATORES = {
+  seguranca: { label: "Segurança", color: "text-red-600 bg-red-50" },
+  higiene: { label: "Higiene", color: "text-green-600 bg-green-50" },
+  manutencao: { label: "Manutenção", color: "text-orange-600 bg-orange-50" },
+  operacional: { label: "Operacional", color: "text-blue-600 bg-blue-50" },
+  qualidade: { label: "Qualidade", color: "text-purple-600 bg-purple-50" },
+  outro: { label: "Outro", color: "text-gray-600 bg-gray-50" },
+};
+
+const RESPONSAVEIS = {
+  gerente: { label: "Gerente" },
+  chapeiro: { label: "Chapeiro" },
+  auxiliar_cozinha: { label: "Auxiliar de Cozinha" },
+  atendente: { label: "Atendente" },
+  cozinheiro: { label: "Cozinheiro" },
+  todos: { label: "Todos" },
 };
 
 const SECOES = {
@@ -76,11 +113,16 @@ export default function GestaoTarefas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDever, setEditingDever] = useState<Dever | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Dever | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   
   // Form state
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState<string>("operacional");
+  const [area, setArea] = useState<string>("geral");
+  const [fatorPrincipal, setFatorPrincipal] = useState<string>("operacional");
+  const [responsavel, setResponsavel] = useState<string>("todos");
+  const [operadorId, setOperadorId] = useState<string>("");
   const [secao, setSecao] = useState<string>("abertura");
   const [recorrencia, setRecorrencia] = useState<string>("diaria");
   const [diaSemana, setDiaSemana] = useState<number>(1);
@@ -91,9 +133,13 @@ export default function GestaoTarefas() {
   // Filtros
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [filtroSecao, setFiltroSecao] = useState<string>("todas");
+  const [filtroArea, setFiltroArea] = useState<string>("todas");
+  const [filtroFator, setFiltroFator] = useState<string>("todos");
+  const [filtroResponsavel, setFiltroResponsavel] = useState<string>("todos");
 
   // Queries
   const { data: deveres = [], refetch } = trpc.deveres.list.useQuery({}) as { data: Dever[], refetch: () => void };
+  const { data: colaboradores = [] } = trpc.colaboradores.listAtivos.useQuery();
 
   // Mutations
   const criarDever = trpc.deveres.create.useMutation({
@@ -142,6 +188,10 @@ export default function GestaoTarefas() {
     setTitulo("");
     setDescricao("");
     setCategoria("operacional");
+    setArea("geral");
+    setFatorPrincipal("operacional");
+    setResponsavel("todos");
+    setOperadorId("");
     setSecao("abertura");
     setRecorrencia("diaria");
     setDiaSemana(1);
@@ -155,6 +205,10 @@ export default function GestaoTarefas() {
     setTitulo(dever.titulo);
     setDescricao(dever.descricao || "");
     setCategoria(dever.categoria);
+    setArea(dever.area || "geral");
+    setFatorPrincipal(dever.fatorPrincipal || "operacional");
+    setResponsavel(dever.responsavel || "todos");
+    setOperadorId(dever.operadorId?.toString() || "");
     setSecao(dever.secao);
     setRecorrencia(dever.recorrencia);
     setDiaSemana(dever.diaSemana || 1);
@@ -174,6 +228,10 @@ export default function GestaoTarefas() {
       titulo: titulo.trim(),
       descricao: descricao.trim() || undefined,
       categoria: categoria as "operacional" | "manutencao" | "limpeza" | "administrativo",
+      area: area as "cozinha" | "caixa" | "area_externa" | "salao" | "estoque" | "geral",
+      fatorPrincipal: fatorPrincipal as "seguranca" | "higiene" | "manutencao" | "operacional" | "qualidade" | "outro",
+      responsavel: responsavel as "gerente" | "chapeiro" | "auxiliar_cozinha" | "atendente" | "cozinheiro" | "todos",
+      operadorId: operadorId ? parseInt(operadorId) : undefined,
       secao: secao as "abertura" | "durante_operacao" | "fechamento",
       recorrencia: recorrencia as "diaria" | "semanal" | "mensal" | "unica",
       diaSemana: recorrencia === "semanal" ? diaSemana : undefined,
@@ -193,6 +251,9 @@ export default function GestaoTarefas() {
   const deveresFiltrados = (deveres as Dever[]).filter((d: Dever) => {
     if (filtroCategoria !== "todas" && d.categoria !== filtroCategoria) return false;
     if (filtroSecao !== "todas" && d.secao !== filtroSecao) return false;
+    if (filtroArea !== "todas" && d.area !== filtroArea) return false;
+    if (filtroFator !== "todos" && d.fatorPrincipal !== filtroFator) return false;
+    if (filtroResponsavel !== "todos" && d.responsavel !== filtroResponsavel) return false;
     return true;
   });
 
@@ -221,6 +282,28 @@ export default function GestaoTarefas() {
     }
   };
 
+  const getOperadorNome = (operadorId: number | null) => {
+    if (!operadorId) return null;
+    const operador = colaboradores.find((c: any) => c.id === operadorId);
+    return operador ? (operador.apelido || operador.nome) : null;
+  };
+
+  // Contadores para estatísticas
+  const stats = {
+    total: deveres.length,
+    ativos: deveres.filter(d => d.ativo).length,
+    porArea: Object.entries(AREAS).map(([key, val]) => ({
+      key,
+      label: val.label,
+      count: deveres.filter(d => d.area === key).length
+    })),
+    porFator: Object.entries(FATORES).map(([key, val]) => ({
+      key,
+      label: val.label,
+      count: deveres.filter(d => d.fatorPrincipal === key).length
+    })),
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -234,47 +317,133 @@ export default function GestaoTarefas() {
             Configure as tarefas e rotinas da equipe
           </p>
         </div>
-        <Button onClick={() => { resetForm(); setEditingDever(null); setDialogOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Tarefa
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros
+          </Button>
+          <Button onClick={() => { resetForm(); setEditingDever(null); setDialogOpen(true); }} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Tarefa
+          </Button>
+        </div>
       </div>
 
-      {/* Filtros */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-1 block">Categoria</label>
-              <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as categorias</SelectItem>
-                  {Object.entries(CATEGORIAS).map(([key, cat]) => (
-                    <SelectItem key={key} value={key}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* Estatísticas Rápidas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-sm text-muted-foreground">Total de Tarefas</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-green-600">{stats.ativos}</div>
+            <div className="text-sm text-muted-foreground">Tarefas Ativas</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-red-500">
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-red-600">
+              {deveres.filter(d => d.fatorPrincipal === 'seguranca').length}
             </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-1 block">Seção</label>
-              <Select value={filtroSecao} onValueChange={setFiltroSecao}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as seções</SelectItem>
-                  {Object.entries(SECOES).map(([key, sec]) => (
-                    <SelectItem key={key} value={key}>{sec.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="text-sm text-muted-foreground">Segurança</div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-emerald-600">
+              {deveres.filter(d => d.fatorPrincipal === 'higiene').length}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="text-sm text-muted-foreground">Higiene</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros Expandidos */}
+      {showFilters && (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div>
+                <Label className="text-xs">Categoria</Label>
+                <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {Object.entries(CATEGORIAS).map(([key, cat]) => (
+                      <SelectItem key={key} value={key}>{cat.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Área</Label>
+                <Select value={filtroArea} onValueChange={setFiltroArea}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {Object.entries(AREAS).map(([key, area]) => (
+                      <SelectItem key={key} value={key}>{area.icon} {area.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Fator Principal</Label>
+                <Select value={filtroFator} onValueChange={setFiltroFator}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {Object.entries(FATORES).map(([key, fator]) => (
+                      <SelectItem key={key} value={key}>{fator.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Responsável</Label>
+                <Select value={filtroResponsavel} onValueChange={setFiltroResponsavel}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {Object.entries(RESPONSAVEIS).map(([key, resp]) => (
+                      <SelectItem key={key} value={key}>{resp.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Seção</Label>
+                <Select value={filtroSecao} onValueChange={setFiltroSecao}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {Object.entries(SECOES).map(([key, sec]) => (
+                      <SelectItem key={key} value={key}>{sec.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Lista de Tarefas por Categoria */}
       {Object.entries(CATEGORIAS).map(([catKey, catConfig]) => {
@@ -296,72 +465,119 @@ export default function GestaoTarefas() {
             </CardHeader>
             <CardContent className="p-0">
               {deveresCategoria.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground">
-                  Nenhuma tarefa nesta categoria
+                <div className="p-8 text-center text-muted-foreground">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <p>Nenhuma tarefa nesta categoria</p>
                 </div>
               ) : (
                 <div className="divide-y">
                   {deveresCategoria.map((dever: Dever) => {
-                    const SecIcon = SECOES[dever.secao as keyof typeof SECOES]?.icon || Clock;
-                    const RecIcon = RECORRENCIAS[dever.recorrencia as keyof typeof RECORRENCIAS]?.icon || Calendar;
+                    const SecaoIcon = SECOES[dever.secao as keyof typeof SECOES]?.icon || Clock;
+                    const areaInfo = AREAS[dever.area as keyof typeof AREAS];
+                    const fatorInfo = FATORES[dever.fatorPrincipal as keyof typeof FATORES];
+                    const responsavelInfo = RESPONSAVEIS[dever.responsavel as keyof typeof RESPONSAVEIS];
+                    const operadorNome = getOperadorNome(dever.operadorId);
                     
                     return (
                       <div 
                         key={dever.id} 
-                        className={`p-4 flex items-center gap-4 hover:bg-secondary/30 transition-colors ${
-                          !dever.ativo ? 'opacity-50' : ''
-                        }`}
+                        className={`p-4 hover:bg-muted/50 transition-colors ${!dever.ativo ? 'opacity-50' : ''}`}
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium">{dever.titulo}</span>
-                            {!dever.ativo && (
-                              <Badge variant="outline" className="text-xs">Inativa</Badge>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-medium truncate">{dever.titulo}</h4>
+                              {!dever.ativo && (
+                                <Badge variant="secondary" className="text-xs">Inativa</Badge>
+                              )}
+                            </div>
+                            
+                            {dever.descricao && (
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                {dever.descricao}
+                              </p>
                             )}
+                            
+                            {/* Tags de informação */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {/* Área */}
+                              {areaInfo && (
+                                <Badge variant="outline" className="text-xs gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {areaInfo.icon} {areaInfo.label}
+                                </Badge>
+                              )}
+                              
+                              {/* Fator Principal */}
+                              {fatorInfo && (
+                                <Badge className={`text-xs ${fatorInfo.color}`}>
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  {fatorInfo.label}
+                                </Badge>
+                              )}
+                              
+                              {/* Responsável */}
+                              {responsavelInfo && dever.responsavel !== 'todos' && (
+                                <Badge variant="outline" className="text-xs gap-1">
+                                  <User className="h-3 w-3" />
+                                  {responsavelInfo.label}
+                                </Badge>
+                              )}
+                              
+                              {/* Operador */}
+                              {operadorNome && (
+                                <Badge variant="secondary" className="text-xs gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {operadorNome}
+                                </Badge>
+                              )}
+                              
+                              {/* Seção */}
+                              <Badge variant="outline" className="text-xs">
+                                <SecaoIcon className="h-3 w-3 mr-1" />
+                                {SECOES[dever.secao as keyof typeof SECOES]?.label}
+                              </Badge>
+                              
+                              {/* Recorrência */}
+                              <Badge variant="outline" className="text-xs">
+                                <CalendarDays className="h-3 w-3 mr-1" />
+                                {getRecorrenciaLabel(dever)}
+                              </Badge>
+                              
+                              {/* Horário */}
+                              {dever.horario && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {dever.horario}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          {dever.descricao && (
-                            <p className="text-sm text-muted-foreground mb-2">{dever.descricao}</p>
-                          )}
-                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <SecIcon className="h-3 w-3" />
-                              {SECOES[dever.secao as keyof typeof SECOES]?.label}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <RecIcon className="h-3 w-3" />
-                              {getRecorrenciaLabel(dever)}
-                            </span>
-                            {dever.horario && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {dever.horario}
-                              </span>
-                            )}
+                          
+                          {/* Ações */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Switch
+                              checked={dever.ativo}
+                              onCheckedChange={(checked) => {
+                                toggleAtivo.mutate({ id: dever.id, ativo: checked });
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(dever)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteConfirm(dever)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={dever.ativo}
-                            onCheckedChange={(checked) => {
-                              toggleAtivo.mutate({ id: dever.id, ativo: checked });
-                            }}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(dever)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setDeleteConfirm(dever)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     );
@@ -381,7 +597,7 @@ export default function GestaoTarefas() {
           setEditingDever(null);
         }
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {editingDever ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
@@ -395,41 +611,167 @@ export default function GestaoTarefas() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-            <div>
-              <label className="text-sm font-medium">Título *</label>
-              <Input
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                placeholder="Ex: Limpeza de Coifa"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Descrição</label>
-              <Textarea
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Detalhes adicionais sobre a tarefa..."
-                className="mt-1"
-                rows={2}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
+            {/* Informações Básicas */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                Informações Básicas
+              </h3>
+              
               <div>
-                <label className="text-sm font-medium">Categoria</label>
-                <Select value={categoria} onValueChange={setCategoria}>
+                <Label>Título *</Label>
+                <Input
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ex: Limpeza de Coifa"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label>Descrição</Label>
+                <Textarea
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  placeholder="Detalhes adicionais sobre a tarefa..."
+                  className="mt-1"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            {/* Classificação */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                Classificação
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Categoria</Label>
+                  <Select value={categoria} onValueChange={setCategoria}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORIAS).map(([key, cat]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${cat.color}`} />
+                            {cat.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Área</Label>
+                  <Select value={area} onValueChange={setArea}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(AREAS).map(([key, areaItem]) => (
+                        <SelectItem key={key} value={key}>
+                          {areaItem.icon} {areaItem.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Fator Principal</Label>
+                  <Select value={fatorPrincipal} onValueChange={setFatorPrincipal}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(FATORES).map(([key, fator]) => (
+                        <SelectItem key={key} value={key}>{fator.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Seção do Dia</Label>
+                  <Select value={secao} onValueChange={setSecao}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(SECOES).map(([key, sec]) => (
+                        <SelectItem key={key} value={key}>{sec.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Responsabilidade */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                Responsabilidade
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Cargo Responsável</Label>
+                  <Select value={responsavel} onValueChange={setResponsavel}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(RESPONSAVEIS).map(([key, resp]) => (
+                        <SelectItem key={key} value={key}>{resp.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Operador (opcional)</Label>
+                  <Select value={operadorId} onValueChange={setOperadorId}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecione um colaborador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum específico</SelectItem>
+                      {colaboradores.map((colab: any) => (
+                        <SelectItem key={colab.id} value={colab.id.toString()}>
+                          {colab.apelido || colab.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Recorrência */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
+                Recorrência
+              </h3>
+              
+              <div>
+                <Label>Frequência</Label>
+                <Select value={recorrencia} onValueChange={setRecorrencia}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(CATEGORIAS).map(([key, cat]) => (
+                    {Object.entries(RECORRENCIAS).map(([key, rec]) => (
                       <SelectItem key={key} value={key}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${cat.color}`} />
-                          {cat.label}
+                        <div>
+                          <div>{rec.label}</div>
+                          <div className="text-xs text-muted-foreground">{rec.desc}</div>
                         </div>
                       </SelectItem>
                     ))}
@@ -437,92 +779,59 @@ export default function GestaoTarefas() {
                 </Select>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Seção do Dia</label>
-                <Select value={secao} onValueChange={setSecao}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(SECOES).map(([key, sec]) => (
-                      <SelectItem key={key} value={key}>{sec.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              {recorrencia === "semanal" && (
+                <div>
+                  <Label>Dia da Semana</Label>
+                  <Select value={diaSemana.toString()} onValueChange={(v) => setDiaSemana(parseInt(v))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIAS_SEMANA.map((dia) => (
+                        <SelectItem key={dia.value} value={dia.value.toString()}>{dia.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-            <div>
-              <label className="text-sm font-medium">Recorrência</label>
-              <Select value={recorrencia} onValueChange={setRecorrencia}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(RECORRENCIAS).map(([key, rec]) => (
-                    <SelectItem key={key} value={key}>
-                      <div>
-                        <div>{rec.label}</div>
-                        <div className="text-xs text-muted-foreground">{rec.desc}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              {recorrencia === "mensal" && (
+                <div>
+                  <Label>Dia do Mês</Label>
+                  <Select value={diaMes.toString()} onValueChange={(v) => setDiaMes(parseInt(v))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
+                        <SelectItem key={dia} value={dia.toString()}>Dia {dia}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-            {recorrencia === "semanal" && (
-              <div>
-                <label className="text-sm font-medium">Dia da Semana</label>
-                <Select value={diaSemana.toString()} onValueChange={(v) => setDiaSemana(parseInt(v))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DIAS_SEMANA.map((dia) => (
-                      <SelectItem key={dia.value} value={dia.value.toString()}>{dia.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+              {recorrencia === "unica" && (
+                <div>
+                  <Label>Data Específica</Label>
+                  <Input
+                    type="date"
+                    value={dataEspecifica}
+                    onChange={(e) => setDataEspecifica(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              )}
 
-            {recorrencia === "mensal" && (
               <div>
-                <label className="text-sm font-medium">Dia do Mês</label>
-                <Select value={diaMes.toString()} onValueChange={(v) => setDiaMes(parseInt(v))}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
-                      <SelectItem key={dia} value={dia.toString()}>Dia {dia}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {recorrencia === "unica" && (
-              <div>
-                <label className="text-sm font-medium">Data Específica</label>
+                <Label>Horário Sugerido (opcional)</Label>
                 <Input
-                  type="date"
-                  value={dataEspecifica}
-                  onChange={(e) => setDataEspecifica(e.target.value)}
+                  type="time"
+                  value={horario}
+                  onChange={(e) => setHorario(e.target.value)}
                   className="mt-1"
                 />
               </div>
-            )}
-
-            <div>
-              <label className="text-sm font-medium">Horário Sugerido (opcional)</label>
-              <Input
-                type="time"
-                value={horario}
-                onChange={(e) => setHorario(e.target.value)}
-                className="mt-1"
-              />
             </div>
           </div>
 

@@ -20,6 +20,7 @@ import KanbanProducao from "./pages/KanbanProducao";
 import GestaoTarefas from "./pages/GestaoTarefas";
 import ProducaoGestor from "./pages/ProducaoGestor";
 import EstoqueGestor from "./pages/EstoqueGestor";
+import Equipe from "./pages/Equipe";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 
@@ -68,9 +69,9 @@ function Router() {
         <Route path="/preparo" component={Preparo} />
         <Route path="/kanban-producao" component={KanbanProducao} />
         <Route path="/gestao-tarefas" component={GestaoTarefas} />
+        <Route path="/equipe" component={Equipe} />
         {/* Rotas placeholder para funcionalidades futuras */}
         <Route path="/cmv" component={() => <PlaceholderPage title="CMV" subtitle="Custo de Mercadoria Vendida" />} />
-        <Route path="/equipe" component={() => <PlaceholderPage title="Equipe" subtitle="Gestão de Colaboradores" />} />
         <Route path="/auditoria" component={() => <PlaceholderPage title="Auditoria" subtitle="Logs de Operação" />} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

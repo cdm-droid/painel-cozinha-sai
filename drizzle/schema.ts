@@ -183,6 +183,14 @@ export const deveres = mysqlTable("deveres", {
   descricao: text("descricao"),
   // Categoria: Operacional, Manutenção, Limpeza, Administrativo
   categoria: mysqlEnum("categoria", ["operacional", "manutencao", "limpeza", "administrativo"]).default("operacional").notNull(),
+  // Área física onde a tarefa é executada
+  area: mysqlEnum("area", ["cozinha", "caixa", "area_externa", "salao", "estoque", "geral"]).default("geral"),
+  // Fator principal / propósito da tarefa
+  fatorPrincipal: mysqlEnum("fatorPrincipal", ["seguranca", "higiene", "manutencao", "operacional", "qualidade", "outro"]).default("operacional"),
+  // Cargo responsável pela supervisão da tarefa
+  responsavel: mysqlEnum("responsavel", ["gerente", "chapeiro", "auxiliar_cozinha", "atendente", "cozinheiro", "todos"]).default("todos"),
+  // Colaborador que executa a tarefa (vinculado à tabela colaboradores)
+  operadorId: int("operadorId"),
   // Seção do dia
   secao: mysqlEnum("secao", ["abertura", "durante_operacao", "fechamento"]).notNull(),
   // Recorrência: diaria, semanal, mensal, unica

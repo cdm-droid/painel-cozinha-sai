@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { ListChecks, Check, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { ListChecks, Check, Clock, ChevronDown, ChevronUp, MapPin, Shield, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -10,6 +11,10 @@ interface Dever {
   titulo: string;
   descricao: string | null;
   categoria: string;
+  area: string | null;
+  fatorPrincipal: string | null;
+  responsavel: string | null;
+  operadorId: number | null;
   secao: string;
   recorrencia: string;
   diaSemana: number | null;
@@ -33,6 +38,33 @@ interface SecaoDever {
   deveres: (Dever & { concluido: boolean })[];
 }
 
+const AREAS = {
+  cozinha: { label: "Cozinha", icon: "🍳" },
+  caixa: { label: "Caixa", icon: "💰" },
+  area_externa: { label: "Área Externa", icon: "🌳" },
+  salao: { label: "Salão", icon: "🪑" },
+  estoque: { label: "Estoque", icon: "📦" },
+  geral: { label: "Geral", icon: "🏢" },
+};
+
+const FATORES = {
+  seguranca: { label: "Segurança", color: "bg-red-100 text-red-700 border-red-200" },
+  higiene: { label: "Higiene", color: "bg-green-100 text-green-700 border-green-200" },
+  manutencao: { label: "Manutenção", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  operacional: { label: "Operacional", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  qualidade: { label: "Qualidade", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  outro: { label: "Outro", color: "bg-gray-100 text-gray-700 border-gray-200" },
+};
+
+const RESPONSAVEIS = {
+  gerente: { label: "Gerente" },
+  chapeiro: { label: "Chapeiro" },
+  auxiliar_cozinha: { label: "Aux. Cozinha" },
+  atendente: { label: "Atendente" },
+  cozinheiro: { label: "Cozinheiro" },
+  todos: { label: "Todos" },
+};
+
 export default function Deveres() {
   const [expandedSection, setExpandedSection] = useState<string | null>("abertura");
   const [deveresConcluidosLocal, setDeveresConcluidosLocal] = useState<Set<number>>(new Set());
@@ -48,6 +80,9 @@ export default function Deveres() {
   const { data: concluidosDB = [], refetch: refetchConcluidos } = trpc.deveres.listConcluidos.useQuery({
     data: hoje,
   }) as { data: DeverConcluido[], refetch: () => void };
+  
+  // Buscar colaboradores para exibir nome do operador
+  const { data: colaboradores = [] } = trpc.colaboradores.listAtivos.useQuery();
   
   // Mutation para marcar dever como concluído
   const concluirDever = trpc.deveres.concluir.useMutation({
@@ -139,6 +174,12 @@ export default function Deveres() {
     if (total === 0) return { total: 0, concluidos: 0, percentual: 0 };
     const concluidos = secoes.reduce((acc, s) => acc + s.deveres.filter(d => d.concluido).length, 0);
     return { total, concluidos, percentual: Math.round((concluidos / total) * 100) };
+  };
+
+  const getOperadorNome = (operadorId: number | null) => {
+    if (!operadorId) return null;
+    const operador = colaboradores.find((c: any) => c.id === operadorId);
+    return operador ? (operador.apelido || operador.nome) : null;
   };
 
   const geral = progressoGeral();
@@ -274,44 +315,87 @@ export default function Deveres() {
               
               {isExpanded && (
                 <div className="px-6 pb-6 space-y-2 animate-in slide-in-from-top-2 duration-200">
-                  {secao.deveres.map((dever) => (
-                    <button
-                      key={dever.id}
-                      onClick={() => toggleDever(dever.id)}
-                      className={cn(
-                        "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
-                        dever.concluido 
-                          ? "bg-emerald-50 border border-emerald-100" 
-                          : "bg-gray-50 border border-gray-100 hover:border-primary/30"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all",
-                        dever.concluido 
-                          ? "bg-emerald-500 border-emerald-500 text-white" 
-                          : "border-gray-300"
-                      )}>
-                        {dever.concluido && <Check size={14} />}
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className={cn(
-                          "font-bold text-sm",
-                          dever.concluido ? "text-emerald-700 line-through" : "text-gray-800"
-                        )}>
-                          {dever.titulo}
-                        </p>
-                        {dever.descricao && (
-                          <p className="text-xs text-gray-400 mt-0.5">{dever.descricao}</p>
+                  {secao.deveres.map((dever) => {
+                    const areaInfo = AREAS[dever.area as keyof typeof AREAS];
+                    const fatorInfo = FATORES[dever.fatorPrincipal as keyof typeof FATORES];
+                    const responsavelInfo = RESPONSAVEIS[dever.responsavel as keyof typeof RESPONSAVEIS];
+                    const operadorNome = getOperadorNome(dever.operadorId);
+                    
+                    return (
+                      <button
+                        key={dever.id}
+                        onClick={() => toggleDever(dever.id)}
+                        className={cn(
+                          "w-full flex flex-col gap-2 p-4 rounded-xl transition-all text-left",
+                          dever.concluido 
+                            ? "bg-emerald-50 border border-emerald-100" 
+                            : "bg-gray-50 border border-gray-100 hover:border-primary/30"
                         )}
-                      </div>
-                      {dever.horario && (
-                        <div className="flex items-center gap-1 text-xs text-gray-400">
-                          <Clock size={12} />
-                          {dever.horario}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all shrink-0",
+                            dever.concluido 
+                              ? "bg-emerald-500 border-emerald-500 text-white" 
+                              : "border-gray-300"
+                          )}>
+                            {dever.concluido && <Check size={14} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={cn(
+                              "font-bold text-sm",
+                              dever.concluido ? "text-emerald-700 line-through" : "text-gray-800"
+                            )}>
+                              {dever.titulo}
+                            </p>
+                            {dever.descricao && (
+                              <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{dever.descricao}</p>
+                            )}
+                          </div>
+                          {dever.horario && (
+                            <div className="flex items-center gap-1 text-xs text-gray-400 shrink-0">
+                              <Clock size={12} />
+                              {dever.horario}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </button>
-                  ))}
+                        
+                        {/* Tags de informação */}
+                        <div className="flex flex-wrap gap-1.5 ml-10">
+                          {/* Área */}
+                          {areaInfo && (
+                            <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 gap-1">
+                              <span>{areaInfo.icon}</span>
+                              {areaInfo.label}
+                            </Badge>
+                          )}
+                          
+                          {/* Fator Principal */}
+                          {fatorInfo && dever.fatorPrincipal !== 'operacional' && (
+                            <Badge className={cn("text-[10px] px-2 py-0 h-5 gap-1 border", fatorInfo.color)}>
+                              <Shield size={10} />
+                              {fatorInfo.label}
+                            </Badge>
+                          )}
+                          
+                          {/* Responsável */}
+                          {responsavelInfo && dever.responsavel !== 'todos' && (
+                            <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 gap-1">
+                              <User size={10} />
+                              {responsavelInfo.label}
+                            </Badge>
+                          )}
+                          
+                          {/* Operador */}
+                          {operadorNome && (
+                            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5">
+                              {operadorNome}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </Card>

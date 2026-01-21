@@ -819,6 +819,9 @@ export const deveresRouter = router({
     .input(z.object({
       secao: z.enum(["abertura", "durante_operacao", "fechamento"]).optional(),
       categoria: z.enum(["operacional", "manutencao", "limpeza", "administrativo"]).optional(),
+      area: z.enum(["cozinha", "caixa", "area_externa", "salao", "estoque", "geral"]).optional(),
+      fatorPrincipal: z.enum(["seguranca", "higiene", "manutencao", "operacional", "qualidade", "outro"]).optional(),
+      responsavel: z.enum(["gerente", "chapeiro", "auxiliar_cozinha", "atendente", "cozinheiro", "todos"]).optional(),
       ativo: z.boolean().optional(),
     }).optional())
     .query(async ({ input }) => {
@@ -833,6 +836,15 @@ export const deveresRouter = router({
       }
       if (input?.categoria) {
         conditions.push(eq(deveres.categoria, input.categoria));
+      }
+      if (input?.area) {
+        conditions.push(eq(deveres.area, input.area));
+      }
+      if (input?.fatorPrincipal) {
+        conditions.push(eq(deveres.fatorPrincipal, input.fatorPrincipal));
+      }
+      if (input?.responsavel) {
+        conditions.push(eq(deveres.responsavel, input.responsavel));
       }
       if (input?.ativo !== undefined) {
         conditions.push(eq(deveres.ativo, input.ativo));
@@ -889,6 +901,10 @@ export const deveresRouter = router({
       titulo: z.string(),
       descricao: z.string().optional(),
       categoria: z.enum(["operacional", "manutencao", "limpeza", "administrativo"]).default("operacional"),
+      area: z.enum(["cozinha", "caixa", "area_externa", "salao", "estoque", "geral"]).default("geral"),
+      fatorPrincipal: z.enum(["seguranca", "higiene", "manutencao", "operacional", "qualidade", "outro"]).default("operacional"),
+      responsavel: z.enum(["gerente", "chapeiro", "auxiliar_cozinha", "atendente", "cozinheiro", "todos"]).default("todos"),
+      operadorId: z.number().optional(),
       secao: z.enum(["abertura", "durante_operacao", "fechamento"]),
       recorrencia: z.enum(["diaria", "semanal", "mensal", "unica"]).default("diaria"),
       diaSemana: z.number().min(0).max(6).optional(),
@@ -905,6 +921,10 @@ export const deveresRouter = router({
         titulo: input.titulo,
         descricao: input.descricao,
         categoria: input.categoria,
+        area: input.area,
+        fatorPrincipal: input.fatorPrincipal,
+        responsavel: input.responsavel,
+        operadorId: input.operadorId,
         secao: input.secao,
         recorrencia: input.recorrencia,
         diaSemana: input.diaSemana,
@@ -924,6 +944,10 @@ export const deveresRouter = router({
       titulo: z.string().optional(),
       descricao: z.string().optional(),
       categoria: z.enum(["operacional", "manutencao", "limpeza", "administrativo"]).optional(),
+      area: z.enum(["cozinha", "caixa", "area_externa", "salao", "estoque", "geral"]).optional(),
+      fatorPrincipal: z.enum(["seguranca", "higiene", "manutencao", "operacional", "qualidade", "outro"]).optional(),
+      responsavel: z.enum(["gerente", "chapeiro", "auxiliar_cozinha", "atendente", "cozinheiro", "todos"]).optional(),
+      operadorId: z.number().nullable().optional(),
       secao: z.enum(["abertura", "durante_operacao", "fechamento"]).optional(),
       recorrencia: z.enum(["diaria", "semanal", "mensal", "unica"]).optional(),
       diaSemana: z.number().min(0).max(6).nullable().optional(),
@@ -943,6 +967,10 @@ export const deveresRouter = router({
       if (updateData.titulo !== undefined) updateValues.titulo = updateData.titulo;
       if (updateData.descricao !== undefined) updateValues.descricao = updateData.descricao;
       if (updateData.categoria !== undefined) updateValues.categoria = updateData.categoria;
+      if (updateData.area !== undefined) updateValues.area = updateData.area;
+      if (updateData.fatorPrincipal !== undefined) updateValues.fatorPrincipal = updateData.fatorPrincipal;
+      if (updateData.responsavel !== undefined) updateValues.responsavel = updateData.responsavel;
+      if (updateData.operadorId !== undefined) updateValues.operadorId = updateData.operadorId;
       if (updateData.secao !== undefined) updateValues.secao = updateData.secao;
       if (updateData.recorrencia !== undefined) updateValues.recorrencia = updateData.recorrencia;
       if (updateData.diaSemana !== undefined) updateValues.diaSemana = updateData.diaSemana;
