@@ -1,0 +1,145 @@
+{
+  "query": "SELECT id, titulo, secao, horario, area, fatorPrincipal, responsavel FROM deveres ORDER BY secao, ordem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT id, titulo, secao, horario, area, fatorPrincipal, responsavel FROM deveres ORDER BY secao, ordem;",
+  "rows": [
+    {
+      "id": "2",
+      "titulo": "Limpeza de Coifa",
+      "secao": "abertura",
+      "horario": "NULL",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "todos"
+    },
+    {
+      "id": "4",
+      "titulo": "Ligar equipamentos (chapas, fritadeiras, estufas)",
+      "secao": "abertura",
+      "horario": "10:00",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "5",
+      "titulo": "Verificar temperatura das geladeiras",
+      "secao": "abertura",
+      "horario": "10:00",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "6",
+      "titulo": "Conferir estoque sensível (blends, batata, queijos)",
+      "secao": "abertura",
+      "horario": "10:15",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "7",
+      "titulo": "Preparar mise en place (molhos, vegetais)",
+      "secao": "abertura",
+      "horario": "10:30",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "8",
+      "titulo": "Organizar praça de montagem",
+      "secao": "abertura",
+      "horario": "10:45",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "9",
+      "titulo": "Reabastecer linha de produção conforme demanda",
+      "secao": "durante_operacao",
+      "horario": "NULL",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "10",
+      "titulo": "Monitorar qualidade dos produtos",
+      "secao": "durante_operacao",
+      "horario": "NULL",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "11",
+      "titulo": "Registrar perdas imediatamente",
+      "secao": "durante_operacao",
+      "horario": "NULL",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "12",
+      "titulo": "Manter área limpa e organizada",
+      "secao": "durante_operacao",
+      "horario": "NULL",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "13",
+      "titulo": "Realizar contagem de estoque sensível",
+      "secao": "fechamento",
+      "horario": "22:00",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "14",
+      "titulo": "Desligar equipamentos",
+      "secao": "fechamento",
+      "horario": "22:30",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "15",
+      "titulo": "Limpar e higienizar praça",
+      "secao": "fechamento",
+      "horario": "22:30",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "16",
+      "titulo": "Armazenar insumos corretamente",
+      "secao": "fechamento",
+      "horario": "22:45",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    },
+    {
+      "id": "17",
+      "titulo": "Verificar fechamento de geladeiras",
+      "secao": "fechamento",
+      "horario": "23:00",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "gerente"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitulo\tsecao\thorario\tarea\tfatorPrincipal\tresponsavel\n2\tLimpeza de Coifa\tabertura\tNULL\tgeral\toperacional\ttodos\n4\tLigar equipamentos (chapas, fritadeiras, estufas)\tabertura\t10:00\tgeral\toperacional\tgerente\n5\tVerificar temperatura das geladeiras\tabertura\t10:00\tgeral\toperacional\tgerente\n6\tConferir estoque sensível (blends, batata, queijos)\tabertura\t10:15\tgeral\toperacional\tgerente\n7\tPreparar mise en place (molhos, vegetais)\tabertura\t10:30\tgeral\toperacional\tgerente\n8\tOrganizar praça de montagem\tabertura\t10:45\tgeral\toperacional\tgerente\n9\tReabastecer linha de produção conforme demanda\tdurante_operacao\tNULL\tgeral\toperacional\tgerente\n10\tMonitorar qualidade dos produtos\tdurante_operacao\tNULL\tgeral\toperacional\tgerente\n11\tRegistrar perdas imediatamente\tdurante_operacao\tNULL\tgeral\toperacional\tgerente\n12\tManter área limpa e organizada\tdurante_operacao\tNULL\tgeral\toperacional\tgerente\n13\tRealizar contagem de estoque sensível\tfechamento\t22:00\tgeral\toperacional\tgerente\n14\tDesligar equipamentos\tfechamento\t22:30\tgeral\toperacional\tgerente\n15\tLimpar e higienizar praça\tfechamento\t22:30\tgeral\toperacional\tgerente\n16\tArmazenar insumos corretamente\tfechamento\t22:45\tgeral\toperacional\tgerente\n17\tVerificar fechamento de geladeiras\tfechamento\t23:00\tgeral\toperacional\tgerente\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

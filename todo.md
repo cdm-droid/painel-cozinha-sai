@@ -166,3 +166,7 @@
 ## Em Andamento - Correção de Bug (Jan 2026)
 
 - [x] Corrigir erro na criação de tarefas (SelectItem com valor vazio)
+
+## Em Andamento - Recadastro de Tarefas (Jan 2026)
+
+- [x] Recadastrar as 14 tarefas originais do painel operacional com novos campos

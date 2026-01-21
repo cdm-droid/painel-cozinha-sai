@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, titulo, descricao, categoria, area, fatorPrincipal, responsavel, secao, recorrencia, ativo FROM deveres ORDER BY categoria, secao, ordem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2Aq67etsF8GCySh.550e6b8989ac --database ai7i9kdkioVcGvL3MfiY3g --execute SELECT id, titulo, descricao, categoria, area, fatorPrincipal, responsavel, secao, recorrencia, ativo FROM deveres ORDER BY categoria, secao, ordem;",
+  "rows": [
+    {
+      "id": "2",
+      "titulo": "Limpeza de Coifa",
+      "descricao": "NULL",
+      "categoria": "operacional",
+      "area": "geral",
+      "fatorPrincipal": "operacional",
+      "responsavel": "todos",
+      "secao": "abertura",
+      "recorrencia": "diaria",
+      "ativo": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitulo\tdescricao\tcategoria\tarea\tfatorPrincipal\tresponsavel\tsecao\trecorrencia\tativo\n2\tLimpeza de Coifa\tNULL\toperacional\tgeral\toperacional\ttodos\tabertura\tdiaria\t1\n",
+  "stderr": "",
+  "execution_time_ms": 94
+}
