@@ -44,7 +44,7 @@ export const MENU_ITEMS = {
       section: "Estratégico", 
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: BarChart3, href: '/' },
-        { id: 'cmv', label: 'CMV', icon: DollarSign, href: '/cmv', sub: 'Custo de Mercadoria' },
+        { id: 'cmv', label: 'CMV & Resultados', icon: DollarSign, href: '/cmv', sub: 'Análise Financeira', highlight: true },
       ]
     },
     { 
@@ -52,6 +52,7 @@ export const MENU_ITEMS = {
       items: [
         { id: 'estoque', label: 'Estoque', icon: Boxes, href: '/estoque', sub: 'Insumos, Sensível, Histórico' },
         { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
+        { id: 'integracoes', label: 'Integrações', icon: Layers, href: '/integracoes', sub: 'Anota Aí / Apps' }, // <--- NOVO
         { id: 'equipe', label: 'Equipe', icon: Users, href: '/equipe' },
         { id: 'tarefas', label: 'Gestão de Tarefas', icon: ListChecks, href: '/gestao-tarefas', sub: 'Rotinas e deveres' },
       ]
@@ -70,4 +71,3 @@ export const MENU_ITEMS = {
       ]
     }
   ]
-};
