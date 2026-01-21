@@ -40,7 +40,6 @@ import {
   Eye,
   BarChart3,
   AlertTriangle,
-  Package,
 } from "lucide-react";
 
 export default function ProducaoGestor() {
@@ -51,39 +50,29 @@ export default function ProducaoGestor() {
   const [selectedLote, setSelectedLote] = useState<any>(null);
   const [showDetails, setShowDetails] = useState(false);
   
-  // Dados do Kanban
+  // 1. Buscar dados do Kanban (Lotes Ativos)
   const { data: lotes = [], refetch: refetchLotes } = trpc.lotesProducao.list.useQuery({
     dataInicio: selectedDate.toISOString().split('T')[0],
     dataFim: selectedDate.toISOString().split('T')[0],
   });
+
+  // 2. Buscar APENAS itens que precisam de produção (Otimização de Performance)
+  // Substitui a antiga busca de 'todosInsumos'
+  const { data: itensNecessarios = [] } = trpc.lotesProducao.itensNecessarios.useQuery();
   
-  // Dados do Diário de Produção
+  // Dados do Diário de Produção (Histórico)
   const { data: diario = [] } = trpc.diarioProducao.list.useQuery();
   
-  // Colaboradores para exibir responsáveis
-  const { data: colaboradores = [] } = trpc.colaboradores.listAtivos.useQuery();
-  
-  // Buscar insumos com estoque baixo (preparos)
-  const { data: todosInsumos = [] } = trpc.insumos.list.useQuery({});
-  
-  // Filtrar preparos com estoque baixo ou crítico
-  const preparosBaixos = todosInsumos.filter(i => 
-    (i.categoria?.toLowerCase().includes("preparo") || i.codigo?.startsWith("(PR)")) &&
-    (i.status === "Baixo" || i.status === "Crítico")
-  );
-  
-  // Estatísticas
+  // Estatísticas do Kanban
   const lotesNecessarios = lotes.filter(l => l.status === "necessario");
   const lotesEmProducao = lotes.filter(l => l.status === "em_producao");
   const lotesProntos = lotes.filter(l => l.status === "pronto");
   const lotesFinalizados = lotes.filter(l => l.status === "finalizado");
   
-  // Total de itens necessários (lotes + preparos baixos não duplicados)
-  const idsLotesNecessarios = new Set(lotesNecessarios.map(l => l.insumoId));
-  const preparosBaixosSemDuplicados = preparosBaixos.filter(p => !idsLotesNecessarios.has(p.id));
-  const totalNecessarios = lotesNecessarios.length + preparosBaixosSemDuplicados.length;
+  // Total real de itens que precisam de atenção (Lotes criados + Sugestões do sistema)
+  const totalNecessarios = lotesNecessarios.length + itensNecessarios.length;
   
-  // Filtrar diário
+  // Filtragem do Histórico (Diário)
   const diarioFiltrado = diario.filter(item => {
     const matchSearch = !searchTerm || 
       item.produto.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -131,7 +120,7 @@ export default function ProducaoGestor() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -232,144 +221,139 @@ export default function ProducaoGestor() {
         <TabsContent value="kanban" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Coluna Necessário */}
-            <Card className="border-red-500/30">
+            <Card className="border-red-500/30 bg-red-50/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   Necessário ({totalNecessarios})
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
-                {/* Lotes já criados */}
+              <CardContent className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                {/* 1. Lotes já criados manualmente ou agendados */}
                 {lotesNecessarios.map(lote => (
                   <Card 
                     key={`lote-${lote.id}`} 
-                    className="bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+                    className="bg-white hover:bg-red-50 border-l-4 border-l-red-500 cursor-pointer transition-all shadow-sm"
                     onClick={() => { setSelectedLote(lote); setShowDetails(true); }}
                   >
                     <CardContent className="p-3">
-                      <p className="font-medium text-sm">{lote.insumoNome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {lote.quantidadePlanejada} {lote.insumoUnidade}
+                      <p className="font-bold text-sm text-gray-800">{lote.insumoNome}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Planejado: {lote.quantidadePlanejada} {lote.insumoUnidade}
                       </p>
-                      <Badge variant="outline" className="mt-1 text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
-                        Lote agendado
+                      <Badge variant="outline" className="mt-2 text-[10px] bg-white border-red-100 text-red-500">
+                        Lote Aberto
                       </Badge>
                     </CardContent>
                   </Card>
                 ))}
                 
-                {/* Preparos com estoque baixo (não duplicados) */}
-                {preparosBaixosSemDuplicados.map(preparo => (
+                {/* 2. Sugestões automáticas baseadas em estoque baixo (Backend Otimizado) */}
+                {itensNecessarios.map(preparo => (
                   <Card 
-                    key={`preparo-${preparo.id}`} 
-                    className="bg-red-500/5 border-red-500/20 cursor-pointer hover:bg-red-500/10 transition-colors"
+                    key={`sugestao-${preparo.id}`} 
+                    className="bg-white hover:bg-red-50 border-l-4 border-l-red-300 border-dashed cursor-pointer transition-all shadow-sm opacity-90 hover:opacity-100"
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="font-medium text-sm">{preparo.nome}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Estoque: {parseFloat(preparo.estoqueAtual).toFixed(1)} {preparo.unidade}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Mínimo: {parseFloat(preparo.estoqueMinimo).toFixed(1)} {preparo.unidade}
-                          </p>
+                          <p className="font-bold text-sm text-gray-800">{preparo.nome}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-500">
+                              Atual: <span className="font-mono font-bold text-red-500">{parseFloat(preparo.estoqueAtual).toFixed(1)}</span>
+                            </span>
+                            <span className="text-xs text-gray-400">|</span>
+                            <span className="text-xs text-gray-500">
+                              Mín: {parseFloat(preparo.estoqueMinimo).toFixed(1)}
+                            </span>
+                          </div>
                         </div>
-                        <Badge 
-                          variant="outline" 
-                          className={preparo.status === "Crítico" 
-                            ? "bg-red-500/20 text-red-400 border-red-500/30" 
-                            : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                          }
-                        >
-                          {preparo.status}
-                        </Badge>
                       </div>
-                      <div className="flex items-center gap-1 mt-2 text-xs text-orange-400">
+                      <div className="flex items-center gap-1 mt-2 text-[10px] font-bold text-red-400 uppercase tracking-wide">
                         <AlertTriangle className="h-3 w-3" />
-                        Estoque baixo - necessita produção
+                        Estoque {preparo.status}
                       </div>
                     </CardContent>
                   </Card>
                 ))}
                 
                 {totalNecessarios === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhum item necessário
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                    <CheckCircle2 className="w-8 h-8 mb-2 opacity-20" />
+                    <p className="text-xs font-medium">Tudo em ordem!</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Coluna Em Produção */}
-            <Card className="border-yellow-500/30">
+            <Card className="border-yellow-500/30 bg-yellow-50/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   Em Produção ({lotesEmProducao.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+              <CardContent className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
                 {lotesEmProducao.map(lote => (
                   <Card 
                     key={lote.id} 
-                    className="bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+                    className="bg-white hover:bg-yellow-50 border-l-4 border-l-yellow-500 cursor-pointer transition-all shadow-sm"
                     onClick={() => { setSelectedLote(lote); setShowDetails(true); }}
                   >
                     <CardContent className="p-3">
-                      <p className="font-medium text-sm">{lote.insumoNome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {lote.quantidadePlanejada} {lote.insumoUnidade}
+                      <p className="font-bold text-sm text-gray-800">{lote.insumoNome}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Qtd: {lote.quantidadePlanejada} {lote.insumoUnidade}
                       </p>
                       {lote.responsavel && (
-                        <p className="text-xs text-primary mt-1">
-                          👤 {lote.responsavel}
-                        </p>
+                        <div className="flex items-center gap-1 mt-2 text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded-md w-fit">
+                          <ChefHat size={12} /> {lote.responsavel}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
                 ))}
                 {lotesEmProducao.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhum item em produção
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                    <PlayCircle className="w-8 h-8 mb-2 opacity-20" />
+                    <p className="text-xs font-medium">Nada em produção</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Coluna Pronto */}
-            <Card className="border-green-500/30">
+            <Card className="border-green-500/30 bg-green-50/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500" />
                   Pronto ({lotesProntos.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+              <CardContent className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
                 {lotesProntos.map(lote => (
                   <Card 
                     key={lote.id} 
-                    className="bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+                    className="bg-white hover:bg-green-50 border-l-4 border-l-green-500 cursor-pointer transition-all shadow-sm"
                     onClick={() => { setSelectedLote(lote); setShowDetails(true); }}
                   >
                     <CardContent className="p-3">
-                      <p className="font-medium text-sm">{lote.insumoNome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {lote.quantidadeProduzida || lote.quantidadePlanejada} {lote.insumoUnidade}
-                      </p>
-                      {lote.responsavel && (
-                        <p className="text-xs text-primary mt-1">
-                          👤 {lote.responsavel}
+                      <p className="font-bold text-sm text-gray-800">{lote.insumoNome}</p>
+                      <div className="flex justify-between items-end mt-1">
+                        <p className="text-xs text-gray-500">
+                          {lote.quantidadeProduzida || lote.quantidadePlanejada} {lote.insumoUnidade}
                         </p>
-                      )}
+                        <CheckCircle2 className="text-green-500 h-4 w-4" />
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
                 {lotesProntos.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhum item pronto
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                    <Package className="w-8 h-8 mb-2 opacity-20" />
+                    <p className="text-xs font-medium">Nenhum lote pronto</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -386,11 +370,11 @@ export default function ProducaoGestor() {
                 placeholder="Buscar por produto ou responsável..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-secondary/50"
+                className="pl-9 bg-white"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px] bg-secondary/50">
+              <SelectTrigger className="w-[180px] bg-white">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
