@@ -1,0 +1,1 @@
+ALTER TABLE `fichas_tecnicas` ADD `visivelOperacional` boolean DEFAULT false NOT NULL;

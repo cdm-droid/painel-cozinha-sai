@@ -203,6 +203,7 @@ export const fichasTecnicasRouter = router({
     .input(z.object({
       categoria: z.string().optional(),
       search: z.string().optional(),
+      visivelOperacional: z.boolean().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -222,6 +223,9 @@ export const fichasTecnicasRouter = router({
             like(fichasTecnicas.codigo, `%${input.search}%`)
           )
         );
+      }
+      if (input?.visivelOperacional !== undefined) {
+        conditions.push(eq(fichasTecnicas.visivelOperacional, input.visivelOperacional));
       }
 
       if (conditions.length > 0) {
@@ -291,6 +295,7 @@ export const fichasTecnicasRouter = router({
       codigoPdv: z.string().optional(),
       nomePdv: z.string().optional(),
       modoPreparo: z.string().optional(),
+      visivelOperacional: z.boolean().optional(),
       componentes: z.array(z.object({
         insumoId: z.string(),
         nome: z.string(),
@@ -306,6 +311,22 @@ export const fichasTecnicasRouter = router({
 
       const { id, ...data } = input;
       await db.update(fichasTecnicas).set(data).where(eq(fichasTecnicas.id, id));
+      return { success: true };
+    }),
+
+  // Toggle visibilidade operacional
+  toggleVisibilidade: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      visivelOperacional: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.update(fichasTecnicas)
+        .set({ visivelOperacional: input.visivelOperacional })
+        .where(eq(fichasTecnicas.id, input.id));
       return { success: true };
     }),
 

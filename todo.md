@@ -141,3 +141,11 @@
 - [x] Adicionar aba "Preparos" na seção Estoque do Gestor (vinculada ao banco de dados do painel operacional)
 - [x] Mostrar itens com estoque baixo no quadro "Necessários" da Produção Gestor
 - [x] Unificar banco de dados de tarefas entre Gestão de Tarefas (Gestor) e Deveres (Operacional)
+
+## Concluído - Unificação Fichas Técnicas (Jan 2026)
+
+- [x] Analisar estrutura atual das fichas técnicas nos dois painéis
+- [x] Adicionar campo de visibilidade (visivelOperacional) no schema de fichas técnicas
+- [x] Atualizar página de Fichas Técnicas do Gestor com botão de marcação (Switch)
+- [x] Atualizar página de Fichas Técnicas do Operacional para usar o mesmo banco de dados
+- [x] Filtrar fichas no painel operacional baseado no campo de visibilidade

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { 
   Search, 
   ChefHat, 
@@ -21,64 +22,84 @@ import {
   Package,
   Utensils,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
   Download,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
-import { FichaTecnica } from "@/lib/mock-data";
-import { useData } from "@/lib/storage";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { FichaTecnicaEditor } from "@/components/FichaTecnicaEditor";
+import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 export default function FichasTecnicas() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [openItems, setOpenItems] = useState<string[]>([]);
-  const { fichas, updateFicha, deleteFicha } = useData();
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingFicha, setEditingFicha] = useState<FichaTecnica | null>(null);
+  const [openItems, setOpenItems] = useState<number[]>([]);
   const { isOperacional } = useAuth();
 
-  const toggleItem = (id: string) => {
+  // Buscar fichas do banco de dados
+  const { data: fichasDB = [], isLoading, refetch } = trpc.fichasTecnicas.list.useQuery(
+    isOperacional ? { visivelOperacional: true } : {}
+  );
+
+  // Mutation para toggle de visibilidade
+  const toggleVisibilidade = trpc.fichasTecnicas.toggleVisibilidade.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Visibilidade atualizada");
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar visibilidade");
+    },
+  });
+
+  // Mutation para deletar ficha
+  const deleteFicha = trpc.fichasTecnicas.delete.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Ficha técnica excluída");
+    },
+    onError: () => {
+      toast.error("Erro ao excluir ficha");
+    },
+  });
+
+  const toggleItem = (id: number) => {
     setOpenItems(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
-  const handleEdit = (ficha: FichaTecnica) => {
-    setEditingFicha(ficha);
-    setIsEditorOpen(true);
+  const handleToggleVisibilidade = (id: number, currentValue: boolean) => {
+    toggleVisibilidade.mutate({ id, visivelOperacional: !currentValue });
   };
 
-  const handleNew = () => {
-    setEditingFicha(null);
-    setIsEditorOpen(true);
-  };
-
-  const handleSave = (savedFicha: FichaTecnica) => {
-    updateFicha(savedFicha);
-  };
-
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (confirm("Tem certeza que deseja excluir esta ficha técnica?")) {
-      deleteFicha(id);
-      toast.success("Ficha técnica excluída.");
+      deleteFicha.mutate(id);
     }
   };
 
-  // Para operacional, mostrar apenas fichas de Preparo (PR) que têm modo de preparo
-  // Para gestor, mostrar todas as fichas
-  const baseFichas = isOperacional 
-    ? fichas.filter(ficha => ficha.produto.startsWith('(PR)'))
-    : fichas;
-
-  const filteredFichas = baseFichas.filter(ficha => 
+  // Filtrar fichas baseado na busca
+  const filteredFichas = fichasDB.filter(ficha => 
     ficha.produto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ficha.id.toLowerCase().includes(searchTerm.toLowerCase())
+    ficha.codigo.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Estatísticas para o gestor
+  const totalFichas = fichasDB.length;
+  const fichasVisiveis = fichasDB.filter(f => f.visivelOperacional).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -93,19 +114,16 @@ export default function FichasTecnicas() {
         </div>
         <div className="flex gap-2">
           {!isOperacional && (
-            <Button 
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={handleNew}
-            >
-              <Plus size={16} />
-              Nova Ficha
-            </Button>
-          )}
-          {!isOperacional && (
-            <Button variant="outline" className="gap-2">
-              <Download size={16} />
-              Exportar
-            </Button>
+            <>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg text-sm">
+                <Eye className="h-4 w-4 text-primary" />
+                <span className="text-muted-foreground">{fichasVisiveis}/{totalFichas} visíveis</span>
+              </div>
+              <Button variant="outline" className="gap-2">
+                <Download size={16} />
+                Exportar
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -138,14 +156,22 @@ export default function FichasTecnicas() {
                     {openItems.includes(ficha.id) ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                   </Button>
                 </CollapsibleTrigger>
-                <div>
-                  <h3 className="font-bold text-lg font-display">{ficha.produto}</h3>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg font-display">{ficha.produto}</h3>
+                    {!isOperacional && ficha.visivelOperacional && (
+                      <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                        <Eye className="h-3 w-3 mr-1" />
+                        Visível
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-                    <span>{ficha.id}</span>
-                    {ficha.pdvId && (
+                    <span>{ficha.codigo}</span>
+                    {ficha.codigoPdv && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-muted-foreground/50"></span>
-                        <span className="text-primary/80">PDV: {ficha.pdvId}</span>
+                        <span className="text-primary/80">PDV: {ficha.codigoPdv}</span>
                       </>
                     )}
                   </div>
@@ -158,7 +184,7 @@ export default function FichasTecnicas() {
                   <>
                     <div className="text-center sm:text-right">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Rendimento</p>
-                      <p className="font-mono font-bold">{ficha.rendimentoBase} {ficha.unidadeRendimento}</p>
+                      <p className="font-mono font-bold">{ficha.rendimento || "-"}</p>
                     </div>
                     <div className="col-span-2 sm:col-span-3 flex justify-end items-center">
                       <Dialog>
@@ -180,7 +206,7 @@ export default function FichasTecnicas() {
                             <div className="p-4 bg-secondary/30 rounded-lg border border-border">
                               <p className="text-xs text-muted-foreground uppercase font-bold">Rendimento Base</p>
                               <p className="text-lg font-mono font-bold">
-                                {ficha.rendimentoBase} <span className="text-sm font-normal text-muted-foreground">{ficha.unidadeRendimento}</span>
+                                {ficha.rendimento || "Não especificado"}
                               </p>
                             </div>
 
@@ -198,7 +224,7 @@ export default function FichasTecnicas() {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {ficha.componentes.map((comp, idx) => (
+                                    {(ficha.componentes || []).map((comp, idx) => (
                                       <TableRow key={idx}>
                                         <TableCell className="font-medium">{comp.nome}</TableCell>
                                         <TableCell className="text-right font-mono">{comp.quantidade}</TableCell>
@@ -228,19 +254,21 @@ export default function FichasTecnicas() {
                   <>
                     <div className="text-center sm:text-right">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Custo Total</p>
-                      <p className="font-mono font-bold text-destructive">R$ {ficha.custoTotal.toFixed(2)}</p>
+                      <p className="font-mono font-bold text-destructive">R$ {parseFloat(ficha.custoTotal).toFixed(2)}</p>
                     </div>
                     <div className="text-center sm:text-right">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Preço Venda</p>
-                      <p className="font-mono font-bold text-success">R$ {ficha.precoVenda.toFixed(2)}</p>
+                      <p className="font-mono font-bold text-success">R$ {ficha.precoVenda ? parseFloat(ficha.precoVenda).toFixed(2) : "0.00"}</p>
                     </div>
                     <div className="text-center sm:text-right">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Markup</p>
-                      <p className="font-mono font-bold">{ficha.markup.toFixed(2)}</p>
+                      <p className="font-mono font-bold">{ficha.markup ? parseFloat(ficha.markup).toFixed(2) : "-"}</p>
                     </div>
                     <div className="text-center sm:text-right">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">CMV</p>
-                      <Badge variant="outline" className="font-mono">{(ficha.cmv * 100).toFixed(1)}%</Badge>
+                      <Badge variant="outline" className="font-mono">
+                        {ficha.cmv ? `${(parseFloat(ficha.cmv) * 100).toFixed(1)}%` : "-"}
+                      </Badge>
                     </div>
                   </>
                 )}
@@ -256,15 +284,16 @@ export default function FichasTecnicas() {
                         <ChefHat size={14} /> Componentes
                       </h4>
                       {!isOperacional && (
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-7 text-xs gap-1"
-                            onClick={() => handleEdit(ficha)}
-                          >
-                            <Edit size={12} /> Editar
-                          </Button>
+                        <div className="flex gap-2 items-center">
+                          {/* Toggle de Visibilidade */}
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg border border-border">
+                            <span className="text-xs text-muted-foreground">Visível no Operacional</span>
+                            <Switch
+                              checked={ficha.visivelOperacional}
+                              onCheckedChange={() => handleToggleVisibilidade(ficha.id, ficha.visivelOperacional)}
+                              disabled={toggleVisibilidade.isPending}
+                            />
+                          </div>
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -292,7 +321,7 @@ export default function FichasTecnicas() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {ficha.componentes.map((comp, idx) => (
+                          {(ficha.componentes || []).map((comp, idx) => (
                             <TableRow key={idx} className="text-sm">
                               <TableCell className="font-medium">{comp.nome}</TableCell>
                               <TableCell className="text-right font-mono">{comp.quantidade}</TableCell>
@@ -319,35 +348,49 @@ export default function FichasTecnicas() {
                         <div className="space-y-3">
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Custo Total</span>
-                            <span className="font-mono font-bold">R$ {ficha.custoTotal.toFixed(2)}</span>
+                            <span className="font-mono font-bold">R$ {parseFloat(ficha.custoTotal).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Preço Sugerido (Markup 3.0)</span>
-                            <span className="font-mono">R$ {(ficha.custoTotal * 3).toFixed(2)}</span>
+                            <span className="font-mono">R$ {(parseFloat(ficha.custoTotal) * 3).toFixed(2)}</span>
                           </div>
                           <div className="h-px bg-border my-2"></div>
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Preço Atual</span>
-                            <span className="font-mono font-bold text-primary">R$ {ficha.precoVenda.toFixed(2)}</span>
+                            <span className="font-mono font-bold text-primary">R$ {ficha.precoVenda ? parseFloat(ficha.precoVenda).toFixed(2) : "0.00"}</span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Lucro Bruto</span>
-                            <span className="font-mono text-success">R$ {(ficha.precoVenda - ficha.custoTotal).toFixed(2)}</span>
+                            <span className="font-mono text-success">
+                              R$ {ficha.precoVenda ? (parseFloat(ficha.precoVenda) - parseFloat(ficha.custoTotal)).toFixed(2) : "0.00"}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      {ficha.nomeOnline && (
+                      {ficha.nomePdv && (
                         <div className="bg-background p-4 rounded-lg border border-border shadow-sm">
                           <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
                             <Package size={14} /> Integração PDV
                           </h4>
                           <p className="text-xs text-muted-foreground mb-1">Nome no Cardápio Online:</p>
-                          <p className="text-sm font-medium italic mb-3">"{ficha.nomeOnline}"</p>
+                          <p className="text-sm font-medium italic mb-3">"{ficha.nomePdv}"</p>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="font-mono text-xs">ID: {ficha.pdvId}</Badge>
+                            <Badge variant="secondary" className="font-mono text-xs">ID: {ficha.codigoPdv}</Badge>
                             <Badge variant="outline" className="text-xs text-success border-success/30 bg-success/5">Sincronizado</Badge>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Modo de Preparo para Gestor */}
+                      {ficha.modoPreparo && (
+                        <div className="bg-background p-4 rounded-lg border border-border shadow-sm">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                            <Utensils size={14} /> Modo de Preparo
+                          </h4>
+                          <p className="text-sm text-muted-foreground whitespace-pre-line line-clamp-4">
+                            {ficha.modoPreparo}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -357,14 +400,20 @@ export default function FichasTecnicas() {
             </CollapsibleContent>
           </Collapsible>
         ))}
-      </div>
 
-      <FichaTecnicaEditor 
-        ficha={editingFicha}
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        onSave={handleSave}
-      />
+        {filteredFichas.length === 0 && (
+          <Card className="p-8 text-center">
+            <ChefHat className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {searchTerm 
+                ? "Nenhuma ficha técnica encontrada para esta busca."
+                : isOperacional 
+                  ? "Nenhuma ficha técnica disponível para visualização."
+                  : "Nenhuma ficha técnica cadastrada."}
+            </p>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

@@ -64,6 +64,8 @@ export const fichasTecnicas = mysqlTable("fichas_tecnicas", {
   nomePdv: varchar("nomePdv", { length: 255 }),
   modoPreparo: text("modoPreparo"),
   componentes: json("componentes").$type<ComponenteFicha[]>(),
+  // Controle de visibilidade no painel operacional
+  visivelOperacional: boolean("visivelOperacional").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
