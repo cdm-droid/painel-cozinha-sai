@@ -2,16 +2,9 @@ import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean,
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -64,7 +57,6 @@ export const fichasTecnicas = mysqlTable("fichas_tecnicas", {
   nomePdv: varchar("nomePdv", { length: 255 }),
   modoPreparo: text("modoPreparo"),
   componentes: json("componentes").$type<ComponenteFicha[]>(),
-  // Controle de visibilidade no painel operacional
   visivelOperacional: boolean("visivelOperacional").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -157,9 +149,8 @@ export const contagensDiarias = mysqlTable("contagens_diarias", {
 export type ContagemDiaria = typeof contagensDiarias.$inferSelect;
 export type InsertContagemDiaria = typeof contagensDiarias.$inferInsert;
 
-
 /**
- * Logs de Auditoria - Registro de todas as ações do sistema
+ * Logs de Auditoria
  */
 export const auditLogs = mysqlTable("audit_logs", {
   id: int("id").autoincrement().primaryKey(),
@@ -175,31 +166,21 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
 
 /**
- * Checklist de Deveres - Tarefas diárias da operação
+ * Checklist de Deveres
  */
 export const deveres = mysqlTable("deveres", {
   id: int("id").autoincrement().primaryKey(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
-  // Categoria: Operacional, Manutenção, Limpeza, Administrativo
   categoria: mysqlEnum("categoria", ["operacional", "manutencao", "limpeza", "administrativo"]).default("operacional").notNull(),
-  // Área física onde a tarefa é executada
   area: mysqlEnum("area", ["cozinha", "caixa", "area_externa", "salao", "estoque", "geral"]).default("geral"),
-  // Fator principal / propósito da tarefa
   fatorPrincipal: mysqlEnum("fatorPrincipal", ["seguranca", "higiene", "manutencao", "operacional", "qualidade", "outro"]).default("operacional"),
-  // Cargo responsável pela supervisão da tarefa
   responsavel: mysqlEnum("responsavel", ["gerente", "chapeiro", "auxiliar_cozinha", "atendente", "cozinheiro", "todos"]).default("todos"),
-  // Colaborador que executa a tarefa (vinculado à tabela colaboradores)
   operadorId: int("operadorId"),
-  // Seção do dia
   secao: mysqlEnum("secao", ["abertura", "durante_operacao", "fechamento"]).notNull(),
-  // Recorrência: diaria, semanal, mensal, unica
   recorrencia: mysqlEnum("recorrencia", ["diaria", "semanal", "mensal", "unica"]).default("diaria").notNull(),
-  // Dia da semana (0-6, domingo=0) - usado quando recorrencia = semanal
   diaSemana: int("diaSemana"),
-  // Dia do mês (1-31) - usado quando recorrencia = mensal
   diaMes: int("diaMes"),
-  // Data específica - usado quando recorrencia = unica
   dataEspecifica: timestamp("dataEspecifica"),
   horario: varchar("horario", { length: 10 }),
   ordem: int("ordem").default(0),
@@ -226,41 +207,31 @@ export type DeverConcluido = typeof deveresConcluidos.$inferSelect;
 export type InsertDeverConcluido = typeof deveresConcluidos.$inferInsert;
 
 /**
- * Lotes de Produção (Kanban de Preparos)
- * Status: necessario -> em_producao -> pronto -> finalizado
+ * Lotes de Produção (Kanban)
  */
 export const lotesProducao = mysqlTable("lotes_producao", {
   id: int("id").autoincrement().primaryKey(),
-  // Referência ao insumo de preparo (categoria Preparo)
   insumoId: int("insumoId").notNull(),
   insumoNome: varchar("insumoNome", { length: 255 }).notNull(),
   insumoUnidade: varchar("insumoUnidade", { length: 50 }).notNull(),
-  // Quantidade a produzir
   quantidadePlanejada: decimal("quantidadePlanejada", { precision: 10, scale: 3 }).notNull(),
   quantidadeProduzida: decimal("quantidadeProduzida", { precision: 10, scale: 3 }).default("0"),
-  // Status do lote no Kanban
   status: mysqlEnum("status", ["necessario", "em_producao", "pronto", "finalizado"]).default("necessario").notNull(),
-  // Data agendada para produção (permite agendamento futuro)
   dataAgendada: timestamp("dataAgendada").defaultNow().notNull(),
-  // Responsável e timestamps
   responsavel: varchar("responsavel", { length: 100 }),
   userId: int("userId"),
-  // Timestamps de cada etapa
   criadoEm: timestamp("criadoEm").defaultNow().notNull(),
   iniciadoEm: timestamp("iniciadoEm"),
   prontoEm: timestamp("prontoEm"),
   finalizadoEm: timestamp("finalizadoEm"),
-  // Observações
   observacao: text("observacao"),
 });
 
 export type LoteProducao = typeof lotesProducao.$inferSelect;
 export type InsertLoteProducao = typeof lotesProducao.$inferInsert;
 
-
 /**
  * Colaboradores (Equipe)
- * Cadastro de funcionários para vincular a produções e tarefas
  */
 export const colaboradores = mysqlTable("colaboradores", {
   id: int("id").autoincrement().primaryKey(),
@@ -289,24 +260,18 @@ export type InsertColaborador = typeof colaboradores.$inferInsert;
 
 /**
  * Espelho de Vendas Externas (Anota Aí / iFood)
- * Armazena o cabeçalho do pedido para cálculo de receita.
  */
 export const vendasExternas = mysqlTable("vendas_externas", {
   id: int("id").autoincrement().primaryKey(),
-  // ID original no sistema externo (para evitar duplicatas)
   externalId: varchar("externalId", { length: 100 }).notNull().unique(),
-  // Fonte da venda (caso integre com outros no futuro)
   origem: varchar("origem", { length: 50 }).default("AnotaAi").notNull(),
   dataVenda: timestamp("dataVenda").notNull(),
-  // Valor total pago pelo cliente
   valorTotal: decimal("valorTotal", { precision: 10, scale: 2 }).notNull(),
-  // Taxa de entrega (geralmente não compõe CMV de produto)
   taxaEntrega: decimal("taxaEntrega", { precision: 10, scale: 2 }).default("0"),
-  // Descontos aplicados
   descontos: decimal("descontos", { precision: 10, scale: 2 }).default("0"),
-  status: varchar("status", { length: 50 }).notNull(), // 'concluido', 'cancelado'
+  status: varchar("status", { length: 50 }).notNull(),
   clienteNome: varchar("clienteNome", { length: 255 }),
-  jsonDados: json("jsonDados"), // Armazena o payload original para debug
+  jsonDados: json("jsonDados"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -315,17 +280,15 @@ export type InsertVendaExterna = typeof vendasExternas.$inferInsert;
 
 /**
  * Itens vendidos em cada pedido externo.
- * Usado para baixar o estoque teórico.
  */
 export const itensVendaExterna = mysqlTable("itens_venda_externa", {
   id: int("id").autoincrement().primaryKey(),
-  vendaId: int("vendaId").notNull(), // Vínculo com vendas_externas
-  // Dados do produto como vieram da API
+  vendaId: int("vendaId").notNull(),
   externalProdutoId: varchar("externalProdutoId", { length: 100 }),
   produtoNome: varchar("produtoNome", { length: 255 }).notNull(),
   quantidade: decimal("quantidade", { precision: 10, scale: 3 }).notNull(),
   precoUnitario: decimal("precoUnitario", { precision: 10, scale: 2 }).notNull(),
-  observacoes: text("observacoes"), // Ex: "Sem cebola"
+  observacoes: text("observacoes"),
 });
 
 export type ItemVendaExterna = typeof itensVendaExterna.$inferSelect;
@@ -333,16 +296,12 @@ export type InsertItemVendaExterna = typeof itensVendaExterna.$inferInsert;
 
 /**
  * Tabela de Mapeamento (A Pedra de Roseta)
- * Vincula um produto do Anota Aí a uma Ficha Técnica do sistema.
  */
 export const mapaProdutos = mysqlTable("mapa_produtos", {
   id: int("id").autoincrement().primaryKey(),
-  // Identificadores do sistema externo
   externalProdutoId: varchar("externalProdutoId", { length: 100 }),
   externalProdutoNome: varchar("externalProdutoNome", { length: 255 }).notNull(),
-  // Vínculo com o sistema interno
-  fichaTecnicaId: int("fichaTecnicaId"), // Pode ser null se ainda não mapeado
-  // Fator de conversão (ex: vendeu 1 combo, baixa 1 hamburguer + 1 refri? Aqui seria complexo, melhor 1 pra 1 por enquanto)
+  fichaTecnicaId: int("fichaTecnicaId"),
   ativo: boolean("ativo").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
