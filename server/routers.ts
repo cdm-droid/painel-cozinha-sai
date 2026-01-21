@@ -49,3 +49,10 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+// ... imports
+import { analiseEstoqueRouter } from "./analise-estoque"; // <--- Importe aqui
+
+export const appRouter = router({
+  // ...
+  analiseEstoque: analiseEstoqueRouter, // <--- Adicione aqui
+});
