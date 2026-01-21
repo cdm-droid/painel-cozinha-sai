@@ -122,7 +122,7 @@ export default function GestaoTarefas() {
   const [area, setArea] = useState<string>("geral");
   const [fatorPrincipal, setFatorPrincipal] = useState<string>("operacional");
   const [responsavel, setResponsavel] = useState<string>("todos");
-  const [operadorId, setOperadorId] = useState<string>("");
+  const [operadorId, setOperadorId] = useState<string>("none");
   const [secao, setSecao] = useState<string>("abertura");
   const [recorrencia, setRecorrencia] = useState<string>("diaria");
   const [diaSemana, setDiaSemana] = useState<number>(1);
@@ -191,7 +191,7 @@ export default function GestaoTarefas() {
     setArea("geral");
     setFatorPrincipal("operacional");
     setResponsavel("todos");
-    setOperadorId("");
+    setOperadorId("none");
     setSecao("abertura");
     setRecorrencia("diaria");
     setDiaSemana(1);
@@ -208,7 +208,7 @@ export default function GestaoTarefas() {
     setArea(dever.area || "geral");
     setFatorPrincipal(dever.fatorPrincipal || "operacional");
     setResponsavel(dever.responsavel || "todos");
-    setOperadorId(dever.operadorId?.toString() || "");
+    setOperadorId(dever.operadorId?.toString() || "none");
     setSecao(dever.secao);
     setRecorrencia(dever.recorrencia);
     setDiaSemana(dever.diaSemana || 1);
@@ -231,7 +231,7 @@ export default function GestaoTarefas() {
       area: area as "cozinha" | "caixa" | "area_externa" | "salao" | "estoque" | "geral",
       fatorPrincipal: fatorPrincipal as "seguranca" | "higiene" | "manutencao" | "operacional" | "qualidade" | "outro",
       responsavel: responsavel as "gerente" | "chapeiro" | "auxiliar_cozinha" | "atendente" | "cozinheiro" | "todos",
-      operadorId: operadorId ? parseInt(operadorId) : undefined,
+      operadorId: operadorId && operadorId !== 'none' ? parseInt(operadorId) : undefined,
       secao: secao as "abertura" | "durante_operacao" | "fechamento",
       recorrencia: recorrencia as "diaria" | "semanal" | "mensal" | "unica",
       diaSemana: recorrencia === "semanal" ? diaSemana : undefined,
@@ -742,7 +742,7 @@ export default function GestaoTarefas() {
                       <SelectValue placeholder="Selecione um colaborador" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum específico</SelectItem>
+                      <SelectItem value="none">Nenhum específico</SelectItem>
                       {colaboradores.map((colab: any) => (
                         <SelectItem key={colab.id} value={colab.id.toString()}>
                           {colab.apelido || colab.nome}

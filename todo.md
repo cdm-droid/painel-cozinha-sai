@@ -162,3 +162,7 @@
 - [x] Adicionar filtros por Área, Fator e Responsável na Gestão de Tarefas
 - [x] Atualizar Deveres do Operacional para exibir os novos campos
 - [x] Criar testes automatizados para as novas funcionalidades
+
+## Em Andamento - Correção de Bug (Jan 2026)
+
+- [x] Corrigir erro na criação de tarefas (SelectItem com valor vazio)
