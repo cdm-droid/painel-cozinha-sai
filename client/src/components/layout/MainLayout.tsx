@@ -1,35 +1,19 @@
 import { useState, useMemo } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { 
-  LayoutDashboard, 
-  Package, 
-  ClipboardList,
-  ClipboardCheck, 
-  ChefHat, 
   Menu, 
   X, 
-  Search,
   Bell,
   Home,
   ArrowLeft,
   ChevronRight,
-  AlertTriangle,
-  AlertOctagon,
   LogOut,
-  Calculator,
-  BookOpen,
-  ListChecks,
-  BarChart3,
-  DollarSign,
-  History,
-  Users,
-  Layers,
-  Timer,
-  Fingerprint,
-  Boxes
+  Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+// Importação Centralizada (Nova)
+import { MENU_ITEMS, THEME } from "@/lib/constants";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -41,64 +25,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [navHistory, setNavHistory] = useState<string[]>([]);
   const { logout, user, isOperacional } = useAuth();
 
-  // Configuração de navegação por perfil
-  const menuConfig = isOperacional ? [
-    { 
-      section: "Rotina Diária", 
-      items: [
-        { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard, href: '/' },
-        { id: 'quadro-status', label: 'Quadro de Produção', icon: ChefHat, href: '/kanban-producao', sub: 'Fluxo em tempo real', highlight: true },
-        { id: 'deveres', label: 'Checklist de Deveres', icon: ListChecks, href: '/deveres', sub: 'Obrigações do turno' },
-      ]
-    },
-    { 
-      section: "Estoque e Contagem", 
-      items: [
-        { id: 'preparo', label: 'Preparo', icon: ChefHat, href: '/preparo', sub: 'Itens de produção', highlight: true },
-        { id: 'contagem-sensivel', label: 'Estoque Sensível', icon: ClipboardCheck, href: '/contagem-diaria' },
-        { id: 'estoque-insumos', label: 'Estoque de Insumos', icon: Layers, href: '/estoque-geral' },
-      ]
-    },
-    { 
-      section: "Ferramentas de Apoio", 
-      items: [
-        { id: 'calculadora', label: 'Calculadora Saî', icon: Calculator, href: '/calculadora', sub: 'Escalonar preparos' },
-        { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
-        { id: 'perdas', label: 'Registrar Perda', icon: AlertOctagon, href: '/perdas' },
-      ]
-    }
-  ] : [
-    // PAINEL GESTOR - Nova estrutura
-    { 
-      section: "Estratégico", 
-      items: [
-        { id: 'dashboard', label: 'Dashboard', icon: BarChart3, href: '/' },
-        { id: 'cmv', label: 'CMV', icon: DollarSign, href: '/cmv', sub: 'Custo de Mercadoria' },
-      ]
-    },
-    { 
-      section: "Gestão", 
-      items: [
-        { id: 'estoque', label: 'Estoque', icon: Boxes, href: '/estoque', sub: 'Insumos, Sensível, Histórico' },
-        { id: 'fichas', label: 'Fichas Técnicas', icon: BookOpen, href: '/fichas-tecnicas' },
-        { id: 'equipe', label: 'Equipe', icon: Users, href: '/equipe' },
-        { id: 'tarefas', label: 'Gestão de Tarefas', icon: ListChecks, href: '/gestao-tarefas', sub: 'Rotinas e deveres' },
-      ]
-    },
-    { 
-      section: "Operacional", 
-      items: [
-        { id: 'producao', label: 'Produção', icon: ChefHat, href: '/producao', sub: 'Quadro e Diário unificados' },
-        { id: 'perdas', label: 'Perdas', icon: AlertOctagon, href: '/perdas' },
-      ]
-    },
-    { 
-      section: "Auditoria", 
-      items: [
-        { id: 'auditoria', label: 'Logs de Operação', icon: Fingerprint, href: '/auditoria' },
-      ]
-    }
-  ];
+  // Configuração carregada do arquivo de constantes
+  const menuConfig = isOperacional ? MENU_ITEMS.operacional : MENU_ITEMS.gestor;
 
   const currentInfo = useMemo(() => {
     for (const section of menuConfig) {
@@ -136,12 +64,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         />
       )}
 
-      {/* SIDEBAR (INDUSTRIAL DARK) */}
+      {/* SIDEBAR */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-[#1A1A1A] text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:static flex flex-col shadow-2xl",
+          "fixed inset-y-0 left-0 z-50 w-72 text-white transition-all duration-300 ease-in-out lg:translate-x-0 lg:static flex flex-col shadow-2xl",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ backgroundColor: THEME.colors.sidebar }}
       >
         <div className="h-20 flex items-center px-6 border-b border-white/10 bg-black/20">
           <div className="flex items-center gap-3">
@@ -180,9 +109,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     onClick={() => navigateTo(item.href)}
                     className={cn(
                       "w-full group flex flex-col gap-0.5 px-4 py-2.5 rounded-xl transition-all duration-200 text-left",
-                      isActive 
-                        ? "bg-primary text-white shadow-md shadow-primary/20" 
-                        : "hover:bg-white/5 text-white/60 hover:text-white"
+                      isActive ? THEME.colors.activeItem : THEME.colors.inactiveItem
                     )}
                   >
                     <div className="flex items-center gap-3">
