@@ -308,3 +308,21 @@ export const mapaProdutos = mysqlTable("mapa_produtos", {
 
 export type MapaProduto = typeof mapaProdutos.$inferSelect;
 export type InsertMapaProduto = typeof mapaProdutos.$inferInsert;
+/**
+ * Registro de Entradas de Estoque (Compras)
+ */
+export const entradasEstoque = mysqlTable("entradas_estoque", {
+  id: int("id").autoincrement().primaryKey(),
+  insumoId: int("insumoId").notNull(),
+  quantidade: decimal("quantidade", { precision: 10, scale: 3 }).notNull(),
+  custoTotal: decimal("custoTotal", { precision: 10, scale: 2 }).default("0"),
+  notaFiscal: varchar("notaFiscal", { length: 100 }),
+  fornecedor: varchar("fornecedor", { length: 100 }),
+  dataEntrada: timestamp("dataEntrada").defaultNow().notNull(),
+  userId: int("userId"),
+  observacao: text("observacao"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EntradaEstoque = typeof entradasEstoque.$inferSelect;
+export type InsertEntradaEstoque = typeof entradasEstoque.$inferInsert;
