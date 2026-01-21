@@ -15,10 +15,11 @@ import {
   lotesProducaoRouter, 
   colaboradoresRouter 
 } from "./cozinha";
-import { integracoesRouter } from "./integracoes"; // <--- Importe aqui
+import { integracoesRouter } from "./integracoes";
+import { analiseRouter } from "./analise";
 
 export const appRouter = router({
-  // ... (rotas do sistema e auth mantidas)
+  // Rotas do sistema e auth
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -41,16 +42,10 @@ export const appRouter = router({
   deveres: deveresRouter,
   lotesProducao: lotesProducaoRouter,
   colaboradores: colaboradoresRouter,
-  integracoes: integracoesRouter, // <--- Adicione aqui
+  
+  // Rotas de integração e análise
+  integracoes: integracoesRouter,
+  analise: analiseRouter,
 });
 
 export type AppRouter = typeof appRouter;
-// ... imports
-import { integracoesRouter } from "./integracoes";
-import { analiseRouter } from "./analise"; // <--- Importe aqui
-
-export const appRouter = router({
-  // ...
-  integracoes: integracoesRouter,
-  analise: analiseRouter, // <--- Adicione aqui
-});

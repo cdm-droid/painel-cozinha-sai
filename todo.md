@@ -170,3 +170,10 @@
 ## Em Andamento - Recadastro de Tarefas (Jan 2026)
 
 - [x] Recadastrar as 14 tarefas originais do painel operacional com novos campos
+
+## Concluído - Sincronização e Atualização de Rotas (Jan 2026)
+
+- [x] Sincronizar com GitHub e analisar alterações
+- [x] Atualizar rotas no App.tsx para o novo dashboard (CMV, Integrações)
+- [x] Corrigir erros encontrados (constants.ts, routers.ts duplicado)
+- [x] Testar funcionamento completo (37 testes passando)

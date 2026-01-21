@@ -12,7 +12,6 @@ import MainLayout from "./components/layout/MainLayout";
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
-const Integracoes = lazy(() => import("./pages/Integracoes"));
 
 // Módulos Operacionais
 const DiarioProducao = lazy(() => import("./pages/DiarioProducao"));
@@ -29,6 +28,10 @@ const ProducaoGestor = lazy(() => import("./pages/ProducaoGestor"));
 const GestaoTarefas = lazy(() => import("./pages/GestaoTarefas"));
 const Equipe = lazy(() => import("./pages/Equipe"));
 const FichasTecnicas = lazy(() => import("./pages/FichasTecnicas"));
+
+// Módulos de Análise e Integração
+const CMV = lazy(() => import("./pages/CMV"));
+const Integracoes = lazy(() => import("./pages/Integracoes"));
 
 // Módulos Legados/Compatibilidade
 const EstoqueCritico = lazy(() => import("./pages/EstoqueCritico"));
@@ -74,14 +77,22 @@ function Router() {
     <MainLayout>
       <Suspense fallback={<PageLoader />}>
         <Switch>
+          {/* Dashboard */}
           <Route path="/" component={Home} />
           
-          {/* Rotas do Gestor - Nova estrutura */}
+          {/* Rotas do Gestor - Estratégico */}
+          <Route path="/cmv" component={CMV} />
+          
+          {/* Rotas do Gestor - Gestão */}
           <Route path="/estoque" component={EstoqueGestor} />
-          <Route path="/producao" component={ProducaoGestor} />
-          <Route path="/gestao-tarefas" component={GestaoTarefas} />
-          <Route path="/equipe" component={Equipe} />
           <Route path="/fichas-tecnicas" component={FichasTecnicas} />
+          <Route path="/integracoes" component={Integracoes} />
+          <Route path="/equipe" component={Equipe} />
+          <Route path="/gestao-tarefas" component={GestaoTarefas} />
+          
+          {/* Rotas do Gestor - Operacional */}
+          <Route path="/producao" component={ProducaoGestor} />
+          <Route path="/perdas" component={Perdas} />
 
           {/* Rotas Operacionais */}
           <Route path="/kanban-producao" component={KanbanProducao} />
@@ -90,23 +101,12 @@ function Router() {
           <Route path="/calculadora" component={Calculadora} />
           <Route path="/deveres" component={Deveres} />
           <Route path="/preparo" component={Preparo} />
-          <Route path="/perdas" component={Perdas} />
-          <Route path="/" component={Home} />
-          
-          {/* Rotas do Gestor - Nova estrutura */}
-          <Route path="/estoque" component={EstoqueGestor} />
-          {/* INSERIR AQUI (Linha 93) */}
-          <Route path="/integracoes" component={Integracoes} />
-          
-          <Route path="/producao" component={ProducaoGestor} />
-          <Route path="/gestao-tarefas" component={GestaoTarefas} />
 
           {/* Rotas legadas mantidas para compatibilidade */}
           <Route path="/estoque-critico" component={EstoqueCritico} />
           <Route path="/estoque-geral" component={EstoqueGeral} />
           
           {/* Rotas placeholder para funcionalidades futuras */}
-          <Route path="/cmv" component={() => <PlaceholderPage title="CMV" subtitle="Custo de Mercadoria Vendida" />} />
           <Route path="/auditoria" component={() => <PlaceholderPage title="Auditoria" subtitle="Logs de Operação" />} />
           
           <Route path="/404" component={NotFound} />
