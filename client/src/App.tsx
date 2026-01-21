@@ -12,6 +12,7 @@ import MainLayout from "./components/layout/MainLayout";
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const Integracoes = lazy(() => import("./pages/Integracoes"));
 
 // Módulos Operacionais
 const DiarioProducao = lazy(() => import("./pages/DiarioProducao"));
@@ -90,6 +91,15 @@ function Router() {
           <Route path="/deveres" component={Deveres} />
           <Route path="/preparo" component={Preparo} />
           <Route path="/perdas" component={Perdas} />
+          <Route path="/" component={Home} />
+          
+          {/* Rotas do Gestor - Nova estrutura */}
+          <Route path="/estoque" component={EstoqueGestor} />
+          {/* INSERIR AQUI (Linha 93) */}
+          <Route path="/integracoes" component={Integracoes} />
+          
+          <Route path="/producao" component={ProducaoGestor} />
+          <Route path="/gestao-tarefas" component={GestaoTarefas} />
 
           {/* Rotas legadas mantidas para compatibilidade */}
           <Route path="/estoque-critico" component={EstoqueCritico} />
