@@ -177,3 +177,11 @@
 - [x] Atualizar rotas no App.tsx para o novo dashboard (CMV, Integrações)
 - [x] Corrigir erros encontrados (constants.ts, routers.ts duplicado)
 - [x] Testar funcionamento completo (37 testes passando)
+
+## Concluído - Correção Integração Anota Aí (Jan 2026)
+
+- [x] Analisar documentação da API do Anota Aí (https://api-parceiros.anota.ai/partnerauth/ping/list)
+- [x] Corrigir URL da API (era /api.anota.ai/v1, agora /api-parceiros.anota.ai/partnerauth)
+- [x] Corrigir headers de autenticação (token direto, sem Bearer)
+- [x] Adicionar endpoint de teste de conexão
+- [ ] Testar sincronização de vendas (aguardando validação do usuário)
