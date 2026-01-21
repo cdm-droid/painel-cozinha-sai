@@ -40,6 +40,7 @@ import {
   Eye,
   BarChart3,
   AlertTriangle,
+  Package,
 } from "lucide-react";
 
 export default function ProducaoGestor() {
@@ -57,7 +58,7 @@ export default function ProducaoGestor() {
   });
 
   // 2. Buscar APENAS itens que precisam de produção (Otimização de Performance)
-  // Substitui a antiga busca de 'todosInsumos'
+  // Substitui a antiga busca pesada de 'todosInsumos'
   const { data: itensNecessarios = [] } = trpc.lotesProducao.itensNecessarios.useQuery();
   
   // Dados do Diário de Produção (Histórico)
