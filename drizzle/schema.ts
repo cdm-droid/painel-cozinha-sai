@@ -280,3 +280,72 @@ export const colaboradores = mysqlTable("colaboradores", {
 
 export type Colaborador = typeof colaboradores.$inferSelect;
 export type InsertColaborador = typeof colaboradores.$inferInsert;
+
+/**
+ * ==========================================
+ * MÓDULO DE INTEGRAÇÃO & CMV
+ * ==========================================
+ */
+
+/**
+ * Espelho de Vendas Externas (Anota Aí / iFood)
+ * Armazena o cabeçalho do pedido para cálculo de receita.
+ */
+export const vendasExternas = mysqlTable("vendas_externas", {
+  id: int("id").autoincrement().primaryKey(),
+  // ID original no sistema externo (para evitar duplicatas)
+  externalId: varchar("externalId", { length: 100 }).notNull().unique(),
+  // Fonte da venda (caso integre com outros no futuro)
+  origem: varchar("origem", { length: 50 }).default("AnotaAi").notNull(),
+  dataVenda: timestamp("dataVenda").notNull(),
+  // Valor total pago pelo cliente
+  valorTotal: decimal("valorTotal", { precision: 10, scale: 2 }).notNull(),
+  // Taxa de entrega (geralmente não compõe CMV de produto)
+  taxaEntrega: decimal("taxaEntrega", { precision: 10, scale: 2 }).default("0"),
+  // Descontos aplicados
+  descontos: decimal("descontos", { precision: 10, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).notNull(), // 'concluido', 'cancelado'
+  clienteNome: varchar("clienteNome", { length: 255 }),
+  jsonDados: json("jsonDados"), // Armazena o payload original para debug
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VendaExterna = typeof vendasExternas.$inferSelect;
+export type InsertVendaExterna = typeof vendasExternas.$inferInsert;
+
+/**
+ * Itens vendidos em cada pedido externo.
+ * Usado para baixar o estoque teórico.
+ */
+export const itensVendaExterna = mysqlTable("itens_venda_externa", {
+  id: int("id").autoincrement().primaryKey(),
+  vendaId: int("vendaId").notNull(), // Vínculo com vendas_externas
+  // Dados do produto como vieram da API
+  externalProdutoId: varchar("externalProdutoId", { length: 100 }),
+  produtoNome: varchar("produtoNome", { length: 255 }).notNull(),
+  quantidade: decimal("quantidade", { precision: 10, scale: 3 }).notNull(),
+  precoUnitario: decimal("precoUnitario", { precision: 10, scale: 2 }).notNull(),
+  observacoes: text("observacoes"), // Ex: "Sem cebola"
+});
+
+export type ItemVendaExterna = typeof itensVendaExterna.$inferSelect;
+export type InsertItemVendaExterna = typeof itensVendaExterna.$inferInsert;
+
+/**
+ * Tabela de Mapeamento (A Pedra de Roseta)
+ * Vincula um produto do Anota Aí a uma Ficha Técnica do sistema.
+ */
+export const mapaProdutos = mysqlTable("mapa_produtos", {
+  id: int("id").autoincrement().primaryKey(),
+  // Identificadores do sistema externo
+  externalProdutoId: varchar("externalProdutoId", { length: 100 }),
+  externalProdutoNome: varchar("externalProdutoNome", { length: 255 }).notNull(),
+  // Vínculo com o sistema interno
+  fichaTecnicaId: int("fichaTecnicaId"), // Pode ser null se ainda não mapeado
+  // Fator de conversão (ex: vendeu 1 combo, baixa 1 hamburguer + 1 refri? Aqui seria complexo, melhor 1 pra 1 por enquanto)
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MapaProduto = typeof mapaProdutos.$inferSelect;
+export type InsertMapaProduto = typeof mapaProdutos.$inferInsert;
