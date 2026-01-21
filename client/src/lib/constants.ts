@@ -1,4 +1,4 @@
-import { LayoutDashboard, ChefHat, ListChecks, Package, ClipboardCheck, Calculator, BookOpen, AlertOctagon, BarChart3, DollarSign, Boxes, Users, Fingerprint, Layers } from "lucide-react";
+import { LayoutDashboard, ChefHat, ListChecks, Package, ClipboardCheck, Calculator, BookOpen, AlertOctagon, BarChart3, DollarSign, Boxes, Users, Fingerprint, Layers, ClipboardList } from "lucide-react";
 
 // Identidade Visual
 export const THEME = {
@@ -67,6 +67,7 @@ export const MENU_ITEMS = {
     { 
       section: "Auditoria", 
       items: [
+        { id: 'auditoria-estoque', label: 'Auditoria de Estoque', icon: ClipboardList, href: '/auditoria-estoque', sub: 'Teórico vs Real' },
         { id: 'auditoria', label: 'Logs de Operação', icon: Fingerprint, href: '/auditoria' },
       ]
     }

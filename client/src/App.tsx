@@ -32,6 +32,7 @@ const FichasTecnicas = lazy(() => import("./pages/FichasTecnicas"));
 // Módulos de Análise e Integração
 const CMV = lazy(() => import("./pages/CMV"));
 const Integracoes = lazy(() => import("./pages/Integracoes"));
+const AuditoriaEstoque = lazy(() => import("./pages/AuditoriaEstoque"));
 
 // Módulos Legados/Compatibilidade
 const EstoqueCritico = lazy(() => import("./pages/EstoqueCritico"));
@@ -106,8 +107,8 @@ function Router() {
           <Route path="/estoque-critico" component={EstoqueCritico} />
           <Route path="/estoque-geral" component={EstoqueGeral} />
           
-          {/* Rotas placeholder para funcionalidades futuras */}
-          <Route path="/auditoria" component={() => <PlaceholderPage title="Auditoria" subtitle="Logs de Operação" />} />
+          {/* Rotas de Auditoria */}
+          <Route path="/auditoria-estoque" component={AuditoriaEstoque} />
           
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />

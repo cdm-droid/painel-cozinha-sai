@@ -185,3 +185,17 @@
 - [x] Corrigir headers de autenticação (token direto, sem Bearer)
 - [x] Adicionar endpoint de teste de conexão
 - [ ] Testar sincronização de vendas (aguardando validação do usuário)
+
+## Em Andamento - Teste e Correção API Anota Aí (Jan 2026)
+
+- [ ] Executar script de teste test-anota-ai.mjs
+- [ ] Identificar qual tentativa funciona (token simples, Bearer, ou x-store-id)
+- [ ] Aplicar correção no integracoes.ts
+- [ ] Testar sincronização de vendas
+
+## Concluído - Auditoria de Estoque (Jan 2026)
+
+- [x] Sincronizar com GitHub (AuditoriaEstoque.tsx, analise-estoque.ts, routers.ts)
+- [x] Adicionar import e rota no App.tsx para AuditoriaEstoque
+- [x] Adicionar item no menu em constants.ts (seção Auditoria)
+- [x] Corrigir erro de exportação duplicada no routers.ts

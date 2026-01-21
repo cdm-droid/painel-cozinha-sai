@@ -17,6 +17,7 @@ import {
 } from "./cozinha";
 import { integracoesRouter } from "./integracoes";
 import { analiseRouter } from "./analise";
+import { analiseEstoqueRouter } from "./analise-estoque";
 
 export const appRouter = router({
   // Rotas do sistema e auth
@@ -46,13 +47,7 @@ export const appRouter = router({
   // Rotas de integração e análise
   integracoes: integracoesRouter,
   analise: analiseRouter,
+  analiseEstoque: analiseEstoqueRouter,
 });
 
 export type AppRouter = typeof appRouter;
-// ... imports
-import { analiseEstoqueRouter } from "./analise-estoque"; // <--- Importe aqui
-
-export const appRouter = router({
-  // ...
-  analiseEstoque: analiseEstoqueRouter, // <--- Adicione aqui
-});
