@@ -45,3 +45,12 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+// ... imports
+import { integracoesRouter } from "./integracoes";
+import { analiseRouter } from "./analise"; // <--- Importe aqui
+
+export const appRouter = router({
+  // ...
+  integracoes: integracoesRouter,
+  analise: analiseRouter, // <--- Adicione aqui
+});
